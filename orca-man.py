@@ -41,8 +41,10 @@ parser.add_argument('--logging-filename', help='set the name of log file', defau
 parser.add_argument('--logging-level', help='set the level of logging', default='INFO', choices='DEBUG INFO '.split())
 parser.add_argument('--logging-format', help='set the format of logging', default='%(levelname)s: [%(asctime)s] %(message)s')
 parser.add_argument('--logging-datefmt', help='set the format of logging date format', default='%Y/%m/%d %I:%M:%S %p')
+parser.add_argument('--logging-filemode', help='set the open mode of logfile', default='a')
 
-subparsers = parser.add_subparsers()
+
+subparsers = parser.add_subparsers(help="Database operations")
 
 parser_init_db = subparsers.add_parser('init_db', help='Initialize an ocean')
 parser_init_db.add_argument('ocean_name')

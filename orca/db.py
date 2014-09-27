@@ -234,8 +234,9 @@ class MixinFromCSV(object):
 
             self.push_rows(all_records)
             self.commit()
-            logger.info('Imported %d rows in %s', n, DateTime.now()-t1)
-            return len(all_records)
+            result = len(all_records)
+            logger.info('Imported %d rows in %s', result, DateTime.now()-t1)
+            return result
 
     def init_db(self, folder):
         """Refresh the source folder to check in new data"""
