@@ -8,7 +8,7 @@ import sqlite3
 import csv
 import logging
 
-from pandas import read_sql
+from pandas import read_sql, read_pickle
 
 import settings
 from orca.tools import *
@@ -26,13 +26,13 @@ SQL_INSERT_OCEAN = """INSERT INTO %(table_name)s
     (%(columns)s) VALUES (%(questions)s)
 """
 
-SQL_GET_VALUE_D = """SELECT stock, date, %(value_name)s 
+SQL_GET_VALUE_D = """SELECT stock, date, date*10000 AS stamp, %(value_name)s 
     FROM %(table_name)s
     %(where)s
     ORDER BY stock, date
 """
 
-SQL_GET_VALUE_T = """SELECT stock, date, %(value_name)s 
+SQL_GET_VALUE_DT = """SELECT stock, date, time, date*10000+time AS stamp, %(value_name)s 
     FROM %(table_name)s
     %(where)s
     ORDER BY stock, date, time
@@ -71,7 +71,7 @@ class OceanManager(object):
         try:
             result = result[0](name, *result[1:])
             self.__pool[name] = result
-        except IndexError:
+        except TypeError:
             pass
 
         return result
@@ -181,7 +181,7 @@ class BasicOcean(object):
                 raise KeyError('%s is not a field.', name)
 
         where, params = _build_sql_where(**kwargs)
-        sql = SQL_GET_VALUE % {'value_name': ','.join(names), 'table_name':self.__table, 'where': where}
+        sql = self.SQL_GET_VALUE % {'value_name': ','.join(names), 'table_name':self.__table, 'where': where}
         return read_sql(sql, self.conn, params=params)
 
     def frames(self, names, cursor=None, **kwargs):
@@ -205,13 +205,26 @@ class BasicOcean(object):
         sql = SQL_INSERT_OCEAN % vars
         cursor.executemany(sql, rows)
 
+    def save_cache(self, fields, cursor=None, **kwargs):
+        logger.info('Loading data from ocean %s', self.name)
+        t1 = DateTime.now()
+        frames = self.frames(fields, cursor, **kwargs)
+        for k, v in frames.iteritems():
+            logger.info('Saving cache %s.%s', self.name, k)
+            filename = join_path(settings.CACHE_PATH, self.name+'.'+k)
+            v.to_pickle(filename)
+        logger.info('%d cache(s) were saved in %s.', len(frames), DateTime.now()-t1)
+
+
 class BasicOceanD(BasicOcean):
     """Ocean with date only."""
     PRIMARY_KEY = ['stock', 'date']
+    SQL_GET_VALUE = SQL_GET_VALUE_D
 
 class BasicOceanDT(BasicOcean):
     """Ocean with date and time."""
     PRIMARY_KEY = ['stock', 'date', 'time']
+    SQL_GET_VALUE = SQL_GET_VALUE_DT
 
 
 class MixinFromCSV(object):
@@ -249,10 +262,41 @@ class MixinFromCSV(object):
                 self.import_csv(full_path)                
         logger.info('Finished of initialization database %s', self.name)
 
+    
+    def refresh(self, folder):
+        """Refresh the source folder to check in new data"""
+        logger.info('Began to refresh database %s', self.name)
+        date = self.max_date()
+        date = Date(date/10000, date % 10000 / 100, date % 100) + ONE_DAY
+        today = Date.today()
+        while date < today:
+            filename = date.strftime('%Y-%m-%d.csv')
+            full_path = join_path(folder, filename)
+            if is_file(full_path):
+                self.import_csv(full_path)
+            date +=  ONE_DAY
+        logger.info('Finished of refreshing database %s', self.name)
+
 class MixinFromOracle(object):
     def __init__(self, sql):
         self.__sql = sql
 
+    def import_query(self, sql, cursor, date):
+        logger.info('Importing records on %s', date)
+        t1 = DateTime.now()
+        all_records = []
+
+        for row in cursor.execute(sql, date):
+            row = self.uniform(row, titles)
+            if row:
+                all_records.append(row)
+
+        self.push_rows(all_records)
+        self.commit()
+        result = len(all_records)
+        logger.info('Imported %d rows in %s', result, DateTime.now()-t1)
+        return result
+        
     def refresh(self, conn_string):
         """Refresh the source database to check in new data"""
         import cx_Oracle
@@ -262,23 +306,14 @@ class MixinFromOracle(object):
         conn = cx_Oracle.connect(conn_string)
         cursor = conn.cursor()
 
-        t1 = self.max_stamp()
-        if t1 == None:
-            t1 = settings.DATE_0
-        else:
-            t1 += ONE_DAY
-
-        t2 = timestamp(Date.today())
-        for day in range(t1, t2, OND_DAY):
-            cursor.execute(self.__sql, day)
-            records = []
-            for row in cursor:
-                records.append(row)
-            self.push_rows(records)
-            logger.info('Imported %d rows on date %d', n, day)
-        self.commit()
-
-        logger.info('Finished of refreshing database %s.', name)
+        date = self.max_date()
+        date = Date(date/10000, date % 10000 / 100, date % 100) + ONE_DAY
+        today = Date.today()
+        while date < today:
+            if is_file(full_path):
+                self.import_query(self.QUERY_SQL, cursor, date)
+            date +=  ONE_DAY
+        logger.info('Finished of refreshing database %s', self.name)
 
 
 class OceanKmin(BasicOceanDT, MixinFromCSV):
@@ -306,3 +341,8 @@ ocean_man['K05I'] = OceanKmin, is_index
 
 ocean_man['K01S'] = OceanKmin, is_stock
 ocean_man['K01I'] = OceanKmin, is_index
+
+
+def load_cache(name):
+    fullname = join_path(settings.CACHE_PATH, name)
+    return read_pickle(fullname)

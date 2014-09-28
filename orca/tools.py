@@ -5,7 +5,7 @@
 
 
 from os import listdir as list_dir
-from os.path import join as join_path, split as split_path
+from os.path import join as join_path, split as split_path, isfile as is_file, isdir as is_dir
 from datetime import date as Date, datetime as DateTime, timedelta as TimeDelta
 
 import re
