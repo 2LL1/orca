@@ -101,12 +101,12 @@ def _build_sql_where(**args):
     where, parameters = [], []
     date1 = args.get('date1', None)
     if date1:
-        where.append('? <= date')
+        where.append('date >= ?')
         parameters.append(date1)
 
     date2 = args.get('date2', None)
     if date2:
-        where.append('? <= date')
+        where.append('date < ?')
         parameters.append(date2)
 
     date_in = args.get('date_in', None)
@@ -117,12 +117,12 @@ def _build_sql_where(**args):
 
     time1 = args.get('time1', None)
     if time1:
-        where.append('? <= time')
+        where.append('time >= ?')
         parameters.append(time1)
 
     time2 = args.get('time2', None)
     if time2:
-        where.append('? <= time')
+        where.append('time < ?')
         parameters.append(time2)
 
     time_in = args.get('time_in', None)
@@ -238,8 +238,12 @@ class BasicOcean(object):
 
         where, params = _build_sql_where(**kwargs)
         sql = self.SQL_GET_VALUE % {'value_name': ','.join(names), 'table_name':self.__table, 'where': where}
-        logger.debug('Execute SQL %s', sql)
-        return read_sql(sql, self.conn, params=params)
+        logger.debug('Start load SQL Data %s', sql)
+        t1 = Timer()
+        result = read_sql(sql, self.conn, params=params)
+        logger.debug('Loaded %d rows in %s', len(result), t1)
+        return result
+        
 
     def frames(self, names, cursor=None, **kwargs):
         """return a value frame between [day1, day2). 
@@ -251,9 +255,13 @@ class BasicOcean(object):
             pass
         
         stacks = self.stack(names, cursor, **kwargs)
+        logger.debug('Start Pivot stacks')
+        t1 = Timer()
         result = {}
         for i in names:
             result[i] = stacks.pivot(settings.FRAME_DIRECTION[0], settings.FRAME_DIRECTION[1], i)
+        logger.debug('Finished pivoting in %s', t1)
+        
         return result
 
     def push_rows(self, rows, cursor=None):
@@ -269,7 +277,7 @@ class BasicOcean(object):
         cursor.executemany(sql, rows)
 
     def save_cache(self, fields, cursor=None, **kwargs):
-        logger.info('Loading data from ocean %s', self.name)
+        logger.info('Loading data from ocean %s to create cache.', self.name)
         t1 = Timer()
         frames = self.frames(fields, cursor, **kwargs)
         for k, v in frames.iteritems():

@@ -21,13 +21,16 @@ DB_PRAGMA = ""
 K05_DATA_FOLDER = 'raw_data/5min'
 K01_DATA_FOLDER = 'raw_data/1min'
 
+KDAY_SOURCE = 'jydb/jydb@jydb'
+
 NLS_LANG = 'AMERICAN_AMERICA.UTF8'
 
 REFRESH_HINTS = {
-	'K05S': K05_DATA_FOLDER,
-	'K05I': K05_DATA_FOLDER,
-	'K01S': K01_DATA_FOLDER,
-	'K01I': K01_DATA_FOLDER,
+	'S05': K05_DATA_FOLDER,
+	'I05': K05_DATA_FOLDER,
+	'S01': K01_DATA_FOLDER,
+	'I01': K01_DATA_FOLDER,
+	'SDAY': KDAY_SOURCE
 }
 
 FRAME_DIRECTION = ['stock', 'stamp'] # Swap it if you want to use timestamp as columns
