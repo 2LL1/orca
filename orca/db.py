@@ -374,7 +374,7 @@ ocean_man['I01'] = OceanKmin, is_index
 
 class MixinFromOracle(object):
     def __init__(self, sql):
-        self.__sql = sql
+        self.SQL_SOURCE = sql
 
     def import_query(self, sql, cursor, date):
         logger.info('Importing records on %s', date)
