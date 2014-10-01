@@ -59,6 +59,9 @@ SQL_MAX_DATE = """SELECT MAX(date)
     %(where)s
 """
 
+SQL_SELECT_KDAY_FROM_ORACLE = """SELECT 
+    FROM QT_DailyQuote INNER JOIN SecuMain ON """
+
 class OceanManager(object):
     def __init__(self):
         self.__pool = {}
@@ -82,10 +85,44 @@ def ocean(name):
     """A shortcut to get an instance of ocean with specified name. """
     return ocean_man[name]
 
-def _build_sql_where(date1=None, date2=None, time1=None, time2=None, stock=None):
+def _build_sql_where(**args):
     """Build where clause to limit the sql result"""
-    # TODO: 
-    return '', []
+    where, parameters = [], []
+    date1 = args.get('date1', None)
+    if date1:
+        where.append('? <= date')
+        parameters.append(date1)
+
+    date2 = args.get('date2', None)
+    if date2:
+        where.append('? <= date')
+        parameters.append(date2)
+
+    date_in = args.get('date_in', None)
+    if date_in:
+        v = list(date_in)
+        parameters += v
+        where.append('date IN (%s)' % ','.join('?'*len(v)))
+
+    time1 = args.get('time1', None)
+    if time1:
+        where.append('? <= time')
+        parameters.append(time1)
+
+    time2 = args.get('time2', None)
+    if time2:
+        where.append('? <= time')
+        parameters.append(time2)
+
+    time_in = args.get('time_in', None)
+    if time_in:
+        v = list(time_in)
+        parameters += v
+        where.append('time IN (%s)' % ','.join('?'*len(v)))
+
+
+    where = 'WHERE ' + ' AND '.join(where)
+    return where, parameters
 
 class BasicOcean(object):
     """The base class for all stock databases"""
