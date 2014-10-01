@@ -16,6 +16,8 @@ PRAGMA cache_size = 160000;
 PRAGMA journal_mode = OFF;
 """
 
+DB_PRAGMA = ""
+
 K05_DATA_FOLDER = 'raw_data/5min'
 K01_DATA_FOLDER = 'raw_data/1min'
 

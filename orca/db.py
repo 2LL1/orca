@@ -19,7 +19,7 @@ SQL_CREATE_OCEAN = """CREATE TABLE IF NOT EXISTS T_%(name)s (
     %(columns)s, 
     PRIMARY KEY (%(primary_keys)s)
 );
-CREATE INDEX IF NOT EXISTS I_%(name)s_STOCK ON T_%(name)s (%(field)s);
+CREATE INDEX IF NOT EXISTS I_%(name)s_%(field)s ON T_%(name)s (%(field)s);
 """.split(';')
 
 SQL_INSERT_OCEAN = """INSERT INTO %(table_name)s
@@ -59,9 +59,16 @@ SQL_MAX_DATE = """SELECT MAX(date)
     %(where)s
 """
 
-SQL_SELECT_KDAY_FROM_ORACLE = """SELECT SecuCode, TradingDay, PrevClosePrice, OpenPrice, HighPrice, LowPrice, ClosePrice, TurnoverVolume, TurnoverValue, TurnoverDeals
+SQL_SELECT_KDAY_STOCK_FROM_ORACLE = """SELECT SecuCode, TradingDay, PrevClosePrice, OpenPrice, HighPrice, LowPrice, ClosePrice, TurnoverVolume, TurnoverValue, TurnoverDeals
     FROM SecuMain INNER JOIN QT_DailyQuote ON SecuMain.InnerCode = QT_DailyQuote.InnerCode
     WHERE (secumarket = 83 AND SecuCode LIKE '60%%' OR secumarket = 90 AND SecuCode LIKE '30%%' OR secumarket = 90 AND SecuCode LIKE '00%%')
+        AND TradingDay = to_date('%s', 'yyyy-mm-dd') 
+    ORDER BY SecuCode
+"""
+
+SQL_SELECT_KDAY_INDEX_FROM_ORACLE = """SELECT SecuCode, TradingDay, PrevClosePrice, OpenPrice, HighPrice, LowPrice, ClosePrice, TurnoverVolume, TurnoverValue, TurnoverDeals
+    FROM SecuMain INNER JOIN QT_DailyQuote ON SecuMain.InnerCode = QT_DailyQuote.InnerCode
+    WHERE (secumarket = 83 AND SecuCode NOT LIKE '60%%' OR secumarket = 90 AND SecuCode NOT LIKE '30%%' OR secumarket = 90 AND SecuCode NOT LIKE '00%%')
         AND TradingDay = to_date('%s', 'yyyy-mm-dd') 
     ORDER BY SecuCode
 """
@@ -196,6 +203,7 @@ class BasicOcean(object):
         sql %= {'table_name':self.__table, 'where': where}
         if cursor == None:
             cursor = self.conn.cursor()
+        logger.debug('Execute SQL %s', sql)
         cursor.execute(sql, params)
         result = cursor.fetchone()
         if result:
@@ -219,18 +227,29 @@ class BasicOcean(object):
         return self._count_by_sql(SQL_COUNT_TIME, cursor, **kwargs)
 
     def stack(self, names, cursor=None, **kwargs):
+        try:
+            names = names.split()
+        except AttributeError:
+            pass
+
         for name in names:
             if name not in self.fields:
                 raise KeyError('%s is not a field.', name)
 
         where, params = _build_sql_where(**kwargs)
         sql = self.SQL_GET_VALUE % {'value_name': ','.join(names), 'table_name':self.__table, 'where': where}
+        logger.debug('Execute SQL %s', sql)
         return read_sql(sql, self.conn, params=params)
 
     def frames(self, names, cursor=None, **kwargs):
         """return a value frame between [day1, day2). 
             name: The column name of the value"""
 
+        try:
+            names = names.split()
+        except AttributeError:
+            pass
+        
         stacks = self.stack(names, cursor, **kwargs)
         result = {}
         for i in names:
@@ -246,6 +265,7 @@ class BasicOcean(object):
             'questions': ','.join('?'*(len(self.fields)+len(self.PRIMARY_KEY)))
         }
         sql = SQL_INSERT_OCEAN % vars
+        logger.debug('Execute SQL %s', sql)
         cursor.executemany(sql, rows)
 
     def save_cache(self, fields, cursor=None, **kwargs):
@@ -345,11 +365,11 @@ class OceanKmin(BasicOceanDT, MixinFromCSV):
 is_stock = lambda token: token[:4] in {'SH60', 'SZ30', 'SZ00'}
 is_index = lambda token: not is_stock(token)
 
-ocean_man['K05S'] = OceanKmin, is_stock
-ocean_man['K05I'] = OceanKmin, is_index
+ocean_man['S05'] = OceanKmin, is_stock
+ocean_man['I05'] = OceanKmin, is_index
 
-ocean_man['K01S'] = OceanKmin, is_stock
-ocean_man['K01I'] = OceanKmin, is_index
+ocean_man['S01'] = OceanKmin, is_stock
+ocean_man['I01'] = OceanKmin, is_index
 
 
 class MixinFromOracle(object):
@@ -401,12 +421,11 @@ class MixinFromOracle(object):
         logger.info('Finished of refreshing database %s', self.name)
 
 class OceanKDay(BasicOceanD, MixinFromOracle):
-    SQL_SOURCE = SQL_SELECT_KDAY_FROM_ORACLE
-    COLUMN_NAMES = "prev_close, open, high, low, close, volume, value, deals".split(',')
+    COLUMN_NAMES = "prev_close open high low close volume value deals".split()
 
-    def __init__(self, name, _):
+    def __init__(self, name, sql):
         BasicOceanD.__init__(self, name, OceanKDay.COLUMN_NAMES)
-        MixinFromOracle.__init__(self, OceanKDay.SQL_SOURCE)
+        MixinFromOracle.__init__(self, sql)
 
     def uniform(self, row):
         row = list(row)
@@ -414,4 +433,5 @@ class OceanKDay(BasicOceanD, MixinFromOracle):
         row[1] = row[1].year * 10000 + row[1].month*100 + row[1].day
         return row
 
-ocean_man['KDAY'] = OceanKDay, None
+ocean_man['SDAY'] = OceanKDay, SQL_SELECT_KDAY_STOCK_FROM_ORACLE
+ocean_man['IDAY'] = OceanKDay, SQL_SELECT_KDAY_INDEX_FROM_ORACLE
