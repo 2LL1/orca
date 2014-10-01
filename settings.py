@@ -29,4 +29,4 @@ REFRESH_HINTS = {
 FRAME_DIRECTION = ['stock', 'stamp'] # Swap it if you want to use timestamp as columns
 
 
-DATE_0 = 200001010000
+DATE_0 = Date(2000, 1, 1)

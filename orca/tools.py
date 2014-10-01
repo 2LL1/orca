@@ -51,3 +51,16 @@ def timestamp(t):
         pass
         
     raise ValueError('Cannot convert %s to DateTime' % t)
+
+class Timer(object):
+    def __init__(self):
+        self.reset()
+
+    def __str__(self):
+        return str(self.delta)
+
+    def delta(self):
+        return DateTime.now() - self.__t0
+
+    def reset(self):
+        self.__t0 = DateTime.now()

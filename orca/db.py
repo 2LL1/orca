@@ -59,8 +59,12 @@ SQL_MAX_DATE = """SELECT MAX(date)
     %(where)s
 """
 
-SQL_SELECT_KDAY_FROM_ORACLE = """SELECT 
-    FROM QT_DailyQuote INNER JOIN SecuMain ON """
+SQL_SELECT_KDAY_FROM_ORACLE = """SELECT SecuCode, TradingDay, PrevClosePrice, OpenPrice, HighPrice, LowPrice, ClosePrice, TurnoverVolume, TurnoverValue, TurnoverDeals
+    FROM SecuMain INNER JOIN QT_DailyQuote ON SecuMain.InnerCode = QT_DailyQuote.InnerCode
+    WHERE (secumarket = 83 AND SecuCode LIKE '60%%' OR secumarket = 90 AND SecuCode LIKE '30%%' OR secumarket = 90 AND SecuCode LIKE '00%%')
+        AND TradingDay = to_date('%s', 'yyyy-mm-dd') 
+    ORDER BY SecuCode
+"""
 
 class OceanManager(object):
     def __init__(self):
@@ -244,13 +248,18 @@ class BasicOcean(object):
 
     def save_cache(self, fields, cursor=None, **kwargs):
         logger.info('Loading data from ocean %s', self.name)
-        t1 = DateTime.now()
+        t1 = Timer()
         frames = self.frames(fields, cursor, **kwargs)
         for k, v in frames.iteritems():
             logger.info('Saving cache %s.%s', self.name, k)
             filename = join_path(settings.CACHE_PATH, self.name+'.'+k)
             v.to_pickle(filename)
-        logger.info('%d cache(s) were saved in %s.', len(frames), DateTime.now()-t1)
+        logger.info('%d cache(s) were saved in %s.', len(frames), t1)
+
+
+def load_cache(name):
+    fullname = join_path(settings.CACHE_PATH, name)
+    return read_pickle(fullname)
 
 
 class BasicOceanD(BasicOcean):
@@ -271,7 +280,7 @@ class MixinFromCSV(object):
         """Import a csv file"""        
         with open(filename, 'rb') as reader:
             logger.info('Importing file %s', filename)
-            t1 = DateTime.now()
+            t1 = Timer()
             reader = csv.reader(reader)
             titles = reader.next()
 
@@ -285,7 +294,7 @@ class MixinFromCSV(object):
             self.push_rows(all_records)
             self.commit()
             result = len(all_records)
-            logger.info('Imported %d rows in %s', result, DateTime.now()-t1)
+            logger.info('Imported %d rows in %s', result, t1)
             return result
 
     def init_db(self, folder):
@@ -314,45 +323,6 @@ class MixinFromCSV(object):
             date +=  ONE_DAY
         logger.info('Finished of refreshing database %s', self.name)
 
-class MixinFromOracle(object):
-    def __init__(self, sql):
-        self.__sql = sql
-
-    def import_query(self, sql, cursor, date):
-        logger.info('Importing records on %s', date)
-        t1 = DateTime.now()
-        all_records = []
-
-        for row in cursor.execute(sql, date):
-            row = self.uniform(row, titles)
-            if row:
-                all_records.append(row)
-
-        self.push_rows(all_records)
-        self.commit()
-        result = len(all_records)
-        logger.info('Imported %d rows in %s', result, DateTime.now()-t1)
-        return result
-        
-    def refresh(self, conn_string):
-        """Refresh the source database to check in new data"""
-        import cx_Oracle
-
-        logger.info('Began to refresh database %s.', self.name)        
-        os.environment['NLS_LANG'] = settings.NLS_LANG
-        conn = cx_Oracle.connect(conn_string)
-        cursor = conn.cursor()
-
-        date = self.max_date()
-        date = Date(date/10000, date % 10000 / 100, date % 100) + ONE_DAY
-        today = Date.today()
-        while date < today:
-            if is_file(full_path):
-                self.import_query(self.QUERY_SQL, cursor, date)
-            date +=  ONE_DAY
-        logger.info('Finished of refreshing database %s', self.name)
-
-
 class OceanKmin(BasicOceanDT, MixinFromCSV):
     COLUMN_NAMES = "price   open    close   high    low     vol     amount  cjbs    yclose  syl1    syl2    buy1    buy2    buy3    buy4    buy5    sale1   sale2   sale3   sale4   sale5   bc1     bc2     bc3     bc4     bc5     sc1     sc2     sc3     sc4     sc5     wb      lb      zmm     buy_vol buy_amount  sale_vol    sale_amount w_buy   w_sale  sectional_buy_vol   sectional_buy_amount    sectional_sale_vol  sectional_sale_amount   sectional_w_buy sectional_w_sale    sectional_yclose    sectional_open  sectional_close sectional_high  sectional_low   sectional_vol   sectional_amount    sectional_cjbs  sectional_wb".split()
 
@@ -380,6 +350,64 @@ ocean_man['K01S'] = OceanKmin, is_stock
 ocean_man['K01I'] = OceanKmin, is_index
 
 
-def load_cache(name):
-    fullname = join_path(settings.CACHE_PATH, name)
-    return read_pickle(fullname)
+class MixinFromOracle(object):
+    def __init__(self, sql):
+        self.__sql = sql
+
+    def import_query(self, sql, cursor, date):
+        logger.info('Importing records on %s', date)
+        t1 = Timer()
+        all_records = []
+
+        sql = sql % date.strftime('%Y-%m-%d')
+
+        for row in cursor.execute(sql, date):
+            row = self.uniform(row, titles)
+            if row:
+                all_records.append(row)
+
+        self.push_rows(all_records)
+        self.commit()
+        result = len(all_records)
+        logger.info('Imported %d rows in %s', result, t1)
+        return result
+
+    def init_db(self, conn_string):
+        self.refresh(conn_string)
+        
+    def refresh(self, conn_string):
+        """Refresh the source database to check in new data"""
+        import cx_Oracle
+
+        logger.info('Began to refresh database %s.', self.name)        
+        os.environ['NLS_LANG'] = settings.NLS_LANG
+        conn = cx_Oracle.connect(conn_string)
+        cursor = conn.cursor()
+
+        t1 = self.max_stamp()
+        if t1 == None:
+            t1 = settings.DATE_0
+        else:
+            t1 = Date(t1 / 10000, t1 % 10000 / 100, t1 % 100) + ONE_DAY
+
+        t2 = Date.today()
+        while t1 < t2:
+            import_query(self.SQL_SOURCE, cursor, t1)
+            t1 += ONE_DAY
+            
+        logger.info('Finished of refreshing database %s', self.name)
+
+class OceanKDay(BasicOceanD, MixinFromOracle):
+    SQL_SOURCE = SQL_SELECT_KDAY_FROM_ORACLE
+    COLUMN_NAMES = "prev_close, open, high, low, close, volume, value, deals".split(',')
+
+    def __init__(self, name):
+        BasicOceanDT.__init__(self, name, OceanKDay.COLUMN_NAMES)
+        MixinFromOracle.__init__(self, OceanKDay.SQL_SOURCE)
+
+    def uniform(self, row):
+        row[0] = int(row[0])
+        row[1] = row[1].year * 10000 + row[1].month*100 + row[1].day
+        return row
+
+ocean_man['KDAY'] = tuple(OceanKDay)
