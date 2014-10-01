@@ -78,7 +78,7 @@ class OceanManager(object):
         try:
             result = result[0](name, *result[1:])
             self.__pool[name] = result
-        except TypeError:
+        except TypeError as e:
             pass
 
         return result
@@ -124,9 +124,11 @@ def _build_sql_where(**args):
         parameters += v
         where.append('time IN (%s)' % ','.join('?'*len(v)))
 
-
-    where = 'WHERE ' + ' AND '.join(where)
-    return where, parameters
+    if where:
+        where = 'WHERE ' + ' AND '.join(where)
+        return where, parameters
+    else:
+        return '', []
 
 class BasicOcean(object):
     """The base class for all stock databases"""
@@ -361,8 +363,8 @@ class MixinFromOracle(object):
 
         sql = sql % date.strftime('%Y-%m-%d')
 
-        for row in cursor.execute(sql, date):
-            row = self.uniform(row, titles)
+        for row in cursor.execute(sql):
+            row = self.uniform(row)
             if row:
                 all_records.append(row)
 
@@ -378,13 +380,14 @@ class MixinFromOracle(object):
     def refresh(self, conn_string):
         """Refresh the source database to check in new data"""
         import cx_Oracle
+        import os
 
         logger.info('Began to refresh database %s.', self.name)        
         os.environ['NLS_LANG'] = settings.NLS_LANG
         conn = cx_Oracle.connect(conn_string)
         cursor = conn.cursor()
 
-        t1 = self.max_stamp()
+        t1 = self.max_date()
         if t1 == None:
             t1 = settings.DATE_0
         else:
@@ -392,7 +395,7 @@ class MixinFromOracle(object):
 
         t2 = Date.today()
         while t1 < t2:
-            import_query(self.SQL_SOURCE, cursor, t1)
+            self.import_query(self.SQL_SOURCE, cursor, t1)
             t1 += ONE_DAY
             
         logger.info('Finished of refreshing database %s', self.name)
@@ -401,13 +404,14 @@ class OceanKDay(BasicOceanD, MixinFromOracle):
     SQL_SOURCE = SQL_SELECT_KDAY_FROM_ORACLE
     COLUMN_NAMES = "prev_close, open, high, low, close, volume, value, deals".split(',')
 
-    def __init__(self, name):
-        BasicOceanDT.__init__(self, name, OceanKDay.COLUMN_NAMES)
+    def __init__(self, name, _):
+        BasicOceanD.__init__(self, name, OceanKDay.COLUMN_NAMES)
         MixinFromOracle.__init__(self, OceanKDay.SQL_SOURCE)
 
     def uniform(self, row):
+        row = list(row)
         row[0] = int(row[0])
         row[1] = row[1].year * 10000 + row[1].month*100 + row[1].day
         return row
 
-ocean_man['KDAY'] = tuple(OceanKDay)
+ocean_man['KDAY'] = OceanKDay, None

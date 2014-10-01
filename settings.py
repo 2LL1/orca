@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-  
 
+from datetime import date as Date
+
 #Please turn it on in debug mode
 DEBUG = False
 

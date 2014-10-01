@@ -59,6 +59,7 @@ class Timer(object):
     def __str__(self):
         return str(self.delta)
 
+    @property
     def delta(self):
         return DateTime.now() - self.__t0
 
