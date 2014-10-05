@@ -280,9 +280,10 @@ class BasicOcean(object):
         logger.info('Loading data from ocean %s to create cache.', self.name)
         t1 = Timer()
         frames = self.frames(fields, cursor, **kwargs)
+        output = kwargs.get('output', self.name)
         for k, v in frames.iteritems():
-            logger.info('Saving cache %s.%s', self.name, k)
-            filename = join_path(settings.CACHE_PATH, self.name+'.'+k)
+            logger.info('Saving cache %s.%s', output, k)
+            filename = join_path(settings.CACHE_PATH, output+'.'+k)
             v.to_pickle(filename)
         logger.info('%d cache(s) were saved in %s.', len(frames), t1)
 
