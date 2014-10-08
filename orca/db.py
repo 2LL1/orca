@@ -278,14 +278,15 @@ class BasicOcean(object):
 
     def save_cache(self, fields, cursor=None, **kwargs):
         logger.info('Loading data from ocean %s to create cache.', self.name)
-        t1 = Timer()
+        timer = Timer()
+
         frames = self.frames(fields, cursor, **kwargs)
         output = kwargs.get('output', self.name)
         for k, v in frames.iteritems():
             logger.info('Saving cache %s.%s', output, k)
             filename = join_path(settings.CACHE_PATH, output+'.'+k)
             v.to_pickle(filename)
-        logger.info('%d cache(s) were saved in %s.', len(frames), t1)
+        logger.info('%d cache(s) were saved in %s.', len(frames), timer)
 
 
 def load_cache(name):
@@ -311,7 +312,7 @@ class MixinFromCSV(object):
         """Import a csv file"""        
         with open(filename, 'rb') as reader:
             logger.info('Importing file %s', filename)
-            t1 = Timer()
+            timer = Timer()
             reader = csv.reader(reader)
             titles = reader.next()
 
@@ -325,7 +326,7 @@ class MixinFromCSV(object):
             self.push_rows(all_records)
             self.commit()
             result = len(all_records)
-            logger.info('Imported %d rows in %s', result, t1)
+            logger.info('Imported %d rows in %s', result, timer)
             return result
 
     def init_db(self, folder):
