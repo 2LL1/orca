@@ -78,8 +78,13 @@ parser_refresh.set_defaults(func=refresh)
 parser_cache = db_parsers.add_parser('cache', help='Generate cache')
 parser_cache.add_argument('ocean_name', help='The name of the ocean')
 parser_cache.add_argument('fields', nargs='+', help='Fields to save into cache')
+parser_cache.add_argument('--date1', type=int)
+parser_cache.add_argument('--date2', type=int)
+parser_cache.add_argument('--date-in', type=int, nargs='*')
+parser_cache.add_argument('--time1', type=int)
+parser_cache.add_argument('--time2', type=int)
+parser_cache.add_argument('--time-in', type=int, nargs='*')
 parser_cache.set_defaults(func=create_cache)
-
 
 
 if __name__ == '__main__':
