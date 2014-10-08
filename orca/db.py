@@ -207,13 +207,13 @@ class BasicOcean(object):
 
     def save_cache(self, fields, cursor=None, **kwargs):
         logger.info('Loading data from ocean %s', self.name)
-        t1 = DateTime.now()
+        timer = Timer()
         frames = self.frames(fields, cursor, **kwargs)
         for k, v in frames.iteritems():
             logger.info('Saving cache %s.%s', self.name, k)
             filename = join_path(settings.CACHE_PATH, self.name+'.'+k)
             v.to_pickle(filename)
-        logger.info('%d cache(s) were saved in %s.', len(frames), DateTime.now()-t1)
+        logger.info('%d cache(s) were saved in %s.', len(frames), timer)
 
 
 class BasicOceanD(BasicOcean):
@@ -234,7 +234,7 @@ class MixinFromCSV(object):
         """Import a csv file"""        
         with open(filename, 'rb') as reader:
             logger.info('Importing file %s', filename)
-            t1 = DateTime.now()
+            timer = Timer()
             reader = csv.reader(reader)
             titles = reader.next()
 
@@ -248,7 +248,7 @@ class MixinFromCSV(object):
             self.push_rows(all_records)
             self.commit()
             result = len(all_records)
-            logger.info('Imported %d rows in %s', result, DateTime.now()-t1)
+            logger.info('Imported %d rows in %s', result, timer)
             return result
 
     def init_db(self, folder):
@@ -283,7 +283,7 @@ class MixinFromOracle(object):
 
     def import_query(self, sql, cursor, date):
         logger.info('Importing records on %s', date)
-        t1 = DateTime.now()
+        timer = Timer()
         all_records = []
 
         for row in cursor.execute(sql, date):
@@ -294,7 +294,7 @@ class MixinFromOracle(object):
         self.push_rows(all_records)
         self.commit()
         result = len(all_records)
-        logger.info('Imported %d rows in %s', result, DateTime.now()-t1)
+        logger.info('Imported %d rows in %s', result, timer)
         return result
         
     def refresh(self, conn_string):
