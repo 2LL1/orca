@@ -8,6 +8,7 @@ import sqlite3
 import csv
 import logging
 
+import numpy
 from pandas import read_sql, read_pickle
 
 import settings
@@ -19,7 +20,7 @@ SQL_CREATE_OCEAN = """CREATE TABLE IF NOT EXISTS T_%(name)s (
     %(columns)s, 
     PRIMARY KEY (%(primary_keys)s)
 );
-CREATE INDEX IF NOT EXISTS I_%(name)s_%(field)s ON T_%(name)s (%(field)s);
+CREATE INDEX IF NOT EXISTS I_%(name)s_%(fields_name)s ON T_%(name)s (%(fields)s);
 """.split(';')
 
 SQL_INSERT_OCEAN = """INSERT INTO %(table_name)s
@@ -29,13 +30,11 @@ SQL_INSERT_OCEAN = """INSERT INTO %(table_name)s
 SQL_GET_VALUE_D = """SELECT stock, date, date*10000 AS stamp, %(value_name)s 
     FROM %(table_name)s
     %(where)s
-    ORDER BY stock, date
 """
 
 SQL_GET_VALUE_DT = """SELECT stock, date, time, date*10000+time AS stamp, %(value_name)s 
     FROM %(table_name)s
     %(where)s
-    ORDER BY stock, date, time
 """
 
 SQL_COUNT_STOCK = """SELECT COUNT(DISTINCT stock)
@@ -62,13 +61,6 @@ SQL_MAX_DATE = """SELECT MAX(date)
 SQL_SELECT_KDAY_STOCK_FROM_ORACLE = """SELECT SecuCode, TradingDay, PrevClosePrice, OpenPrice, HighPrice, LowPrice, ClosePrice, TurnoverVolume, TurnoverValue, TurnoverDeals
     FROM SecuMain INNER JOIN QT_DailyQuote ON SecuMain.InnerCode = QT_DailyQuote.InnerCode
     WHERE (secumarket = 83 AND SecuCode LIKE '60%%' OR secumarket = 90 AND SecuCode LIKE '30%%' OR secumarket = 90 AND SecuCode LIKE '00%%')
-        AND TradingDay = to_date('%s', 'yyyy-mm-dd') 
-    ORDER BY SecuCode
-"""
-
-SQL_SELECT_KDAY_INDEX_FROM_ORACLE = """SELECT SecuCode, TradingDay, PrevClosePrice, OpenPrice, HighPrice, LowPrice, ClosePrice, TurnoverVolume, TurnoverValue, TurnoverDeals
-    FROM SecuMain INNER JOIN QT_DailyQuote ON SecuMain.InnerCode = QT_DailyQuote.InnerCode
-    WHERE (secumarket = 83 AND SecuCode NOT LIKE '60%%' OR secumarket = 90 AND SecuCode NOT LIKE '30%%' OR secumarket = 90 AND SecuCode NOT LIKE '00%%')
         AND TradingDay = to_date('%s', 'yyyy-mm-dd') 
     ORDER BY SecuCode
 """
@@ -190,8 +182,9 @@ class BasicOcean(object):
         logger.debug('Execute SQL %s', sql)
         cursor.execute(sql)
 
-        for field in self.PRIMARY_KEY:
-            sql = SQL_CREATE_OCEAN[1] % {'name': name, 'field': field}
+        for fields in self.INDEXES:
+            fields = fields.split()
+            sql = SQL_CREATE_OCEAN[1] % {'name': name, 'fields': ', '.join(fields), 'fields_name': '_'.join(fields)}
             logger.debug('Execute SQL %s', sql)
             cursor.execute(sql)
 
@@ -260,6 +253,11 @@ class BasicOcean(object):
         result = {}
         for i in names:
             result[i] = stacks.pivot(settings.FRAME_DIRECTION[0], settings.FRAME_DIRECTION[1], i)
+            if settings.FRAME_DIRECTION[0] == 'stock':
+                result[i].index = numpy.char.mod('%06d', result[i].index)
+            if settings.FRAME_DIRECTION[1] == 'stock':
+                result[i].columns = numpy.char.mod('%06d', result[i].columns)
+
         logger.debug('Finished pivoting in %s', t1)
         
         return result
@@ -297,11 +295,14 @@ def load_cache(name):
 class BasicOceanD(BasicOcean):
     """Ocean with date only."""
     PRIMARY_KEY = ['stock', 'date']
+    INDEXES = {'date'}
     SQL_GET_VALUE = SQL_GET_VALUE_D
+
 
 class BasicOceanDT(BasicOcean):
     """Ocean with date and time."""
     PRIMARY_KEY = ['stock', 'date', 'time']
+    INDEXES = ['date', 'time', 'date time', 'stock time']
     SQL_GET_VALUE = SQL_GET_VALUE_DT
 
 
@@ -444,4 +445,4 @@ class OceanKDay(BasicOceanD, MixinFromOracle):
         return row
 
 ocean_man['SDAY'] = OceanKDay, SQL_SELECT_KDAY_STOCK_FROM_ORACLE
-ocean_man['IDAY'] = OceanKDay, SQL_SELECT_KDAY_INDEX_FROM_ORACLE
+

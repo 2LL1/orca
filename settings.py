@@ -11,12 +11,12 @@ DB_PATH = r"db"
 CACHE_PATH = r"cache"
 
 # Tune for performance
-DB_PRAGMA = """
-PRAGMA cache_size = 160000;
-PRAGMA journal_mode = OFF;
+DB_PRAGMA = """PRAGMA foreign_keys=ON;
+PRAGMA synchronous=OFF;
+PRAGMA journal_mode=MEMORY;
+PRAGMA default_cache_size=10000;
+PRAGMA locking_mode=EXCLUSIVE;
 """
-
-DB_PRAGMA = ""
 
 K05_DATA_FOLDER = 'raw_data/5min'
 K01_DATA_FOLDER = 'raw_data/1min'
