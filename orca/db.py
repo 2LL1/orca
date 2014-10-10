@@ -302,7 +302,7 @@ class BasicOceanD(BasicOcean):
 class BasicOceanDT(BasicOcean):
     """Ocean with date and time."""
     PRIMARY_KEY = ['stock', 'date', 'time']
-    INDEXES = ['date', 'time', 'date time', 'stock time']
+    INDEXES = ['date', 'time', 'time date']
     SQL_GET_VALUE = SQL_GET_VALUE_DT
 
 

@@ -84,6 +84,7 @@ parser_cache.add_argument('--date-in', type=int, nargs='*')
 parser_cache.add_argument('--time1', type=int)
 parser_cache.add_argument('--time2', type=int)
 parser_cache.add_argument('--time-in', type=int, nargs='*')
+parser_cache.add_argument('--output')
 parser_cache.set_defaults(func=create_cache)
 
 

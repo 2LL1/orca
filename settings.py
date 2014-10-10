@@ -11,10 +11,9 @@ DB_PATH = r"db"
 CACHE_PATH = r"cache"
 
 # Tune for performance
-DB_PRAGMA = """PRAGMA foreign_keys=ON;
-PRAGMA synchronous=OFF;
+DB_PRAGMA = """PRAGMA synchronous=OFF;
 PRAGMA journal_mode=MEMORY;
-PRAGMA default_cache_size=10000;
+PRAGMA cache_size=-100000;
 PRAGMA locking_mode=EXCLUSIVE;
 """
 
