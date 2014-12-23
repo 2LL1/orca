@@ -1,8 +1,15 @@
 # -*- coding: utf-8 -*-  
+
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import print_function
+
 """
 Databases
 by madlee @ 2014.09.19
 """
+
+import abc
 
 import sqlite3
 import csv
@@ -51,7 +58,6 @@ SQL_COUNT_TIME = """SELECT COUNT(DISTINCT time)
     FROM %(table_name)s
     %(where)s
 """
-
 
 SQL_MAX_DATE = """SELECT MAX(date) 
     FROM %(table_name)s
@@ -130,6 +136,13 @@ def _build_sql_where(**args):
         return '', []
 
 class BasicOcean(object):
+    __metaclass__ = abc.ABCMeta
+
+    @abc.abstractmethod
+    def stack(self, names, cursor=None, **kwargs):
+        raise NotImplementedError()
+
+class OceanSqlite3(BasicOcean):
     """The base class for all stock databases"""
 
     def __init__(self, name, fields):
@@ -219,6 +232,7 @@ class BasicOcean(object):
         """Count the stock points between [day1, day2)"""
         return self._count_by_sql(SQL_COUNT_TIME, cursor, **kwargs)
 
+    @abc.abstractmethod
     def stack(self, names, cursor=None, **kwargs):
         try:
             names = names.split()
@@ -236,7 +250,6 @@ class BasicOcean(object):
         result = read_sql(sql, self.conn, params=params)
         logger.debug('Loaded %d rows in %s', len(result), t1)
         return result
-        
 
     def frames(self, names, cursor=None, **kwargs):
         """return a value frame between [day1, day2). 
@@ -292,19 +305,18 @@ def load_cache(name):
     return read_pickle(fullname)
 
 
-class BasicOceanD(BasicOcean):
+class BasicOceanD(OceanSqlite3):
     """Ocean with date only."""
-    PRIMARY_KEY = ['stock', 'date']
-    INDEXES = {'date'}
+    PRIMARY_KEY = ['date', 'stock', ]
+    INDEXES = ['stock']
     SQL_GET_VALUE = SQL_GET_VALUE_D
 
 
-class BasicOceanDT(BasicOcean):
+class BasicOceanDT(OceanSqlite3):
     """Ocean with date and time."""
-    PRIMARY_KEY = ['stock', 'date', 'time']
-    INDEXES = ['date', 'time', 'time date']
+    PRIMARY_KEY = ['time', 'date', 'stock']
+    INDEXES = ['stock']
     SQL_GET_VALUE = SQL_GET_VALUE_DT
-
 
 class MixinFromCSV(object):
     """Original data was saved in CSV file."""
