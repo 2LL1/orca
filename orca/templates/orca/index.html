@@ -14,6 +14,7 @@
     <link href="{% static "bootstrap/css/bootstrap.min.css" %}" rel="stylesheet">
     <link href="{% static "Font-Awesome/css/font-awesome.min.css" %}" rel="stylesheet">
     <link href="{% static "orca/css/orca.css" %}" rel="stylesheet">
+    <link href="{% static "angular-xeditable/css/xeditable.css" %}" rel="stylesheet">
   </head>
 
   <body ng-app="orcaApp">
@@ -32,6 +33,7 @@
             <li class="ctrl-alpha"><a href="#/alpha">Alpha</a></li>
             <li class="ctrl-universe"><a href="#/universe">Universe</a></li>
             <li class="ctrl-category"><a href="#/category">Category</a></li>
+            <li class="ctrl-report"><a href="#/report">Report</a></li>
             <li class="ctrl-admin"><a href="#/admin">Admin</a></li>
           </ul>
           <ul class="nav navbar-nav pull-right">
@@ -43,7 +45,7 @@
                 <li><a href="#"><i class="fa fa-laptop"></i> Personal Profile</a></li>
                 <li><a href="#"><i class="fa fa-key"></i> Change Password</a></li>
                 <li class="divider"></li>
-                <li><a href="#"><i class="fa fa-sign-out"></i> Logout</a></li>
+                <li><a onclick='Madlee.logout(this)'><i class="fa fa-sign-out"></i> Logout</a></li>
               </ul>
             </li>
           </ul>
@@ -59,18 +61,19 @@
     <script src="{% static "moment/min/moment.min.js" %}"></script>
     <script src="{% static "bootstrap-datetimepicker/src/js/bootstrap-datetimepicker.js" %}"></script>
     <script src="{% static "bootstrap-treeview/dist/bootstrap-treeview.min.js" %}"></script>
-    <script src="{% static "bootstrap3-editable/js/bootstrap-editable.min.js" %}"></script>
     <script src="{% static "jquery-validation/dist/jquery.validate.min.js" %}"></script>
 
     <script src="{% static "angular/angular.js" %}"></script>
     <script src="{% static "angular/angular-route.js" %}"></script>
     <script src="{% static "angular/angular-resource.js" %}"></script>
+    <script src="{% static "angular-xeditable/js/xeditable.js" %}"></script>
 
     <script src="{% static "madlee/js/madlee.1.js" %}"></script>
     <script src="{% static "orca/js/orca.js" %}"></script>
     <script src="{% static "orca/js/alpha.js" %}"></script>
     <script src="{% static "orca/js/universe.js" %}"></script>
     <script src="{% static "orca/js/category.js" %}"></script>
+    <script src="{% static "orca/js/report.js" %}"></script>
     <script src="{% static "orca/js/admin.js" %}"></script>
 
   </body>

@@ -7,7 +7,7 @@
         <form class="form-inline" role="form">
           <div class="form-group">
             <div class="input-group">
-              <input type="text" class="form-control" id="exampleInputPassword2" placeholder="Search">
+              <input type="text" class="form-control" placeholder="Search">
               <span class="input-group-btn">
                 <button class="btn btn-default" type="button"><i class="fa fa-search"></i></button>
               </span>
@@ -20,13 +20,13 @@
           <thead>
             <tr>
               <th>Name</th>
-              <th>Owner</th>
+              <th>Status</th>
             </tr>
           </thead>
           <tbody>
-            <tr ng-repeat="row in alphas">
-              <td>{[{row.name}]}</td>
-              <td>{[{row.owner}]}</td>
+            <tr ng-repeat="row in alphas.results">
+              <td><a href="#/alpha/{[{row.id}]}">{[{row.name}]}</a></td>
+              <td>{[{row.status}]}</td>
             </tr>
           </tbody>
         </table>
@@ -37,7 +37,32 @@
     <div class="panel panel-default">
       <div class="panel-heading">Universe</div>
       <div class="panel-body">
-        <table class="table"></table>
+        <form class="form-inline" role="form">
+          <div class="form-group">
+            <div class="input-group">
+              <input type="text" class="form-control" placeholder="Search">
+              <span class="input-group-btn">
+                <button class="btn btn-default" type="button"><i class="fa fa-search"></i></button>
+              </span>
+            </div>
+          </div>
+          <a class="btn btn-default pull-right" title="Add Universe" href="#/universe/create"><i class="fa fa-plus"></i></a>
+        </form>
+        
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr ng-repeat="row in universe.results">
+              <td><a href="#/universe/{[{row.id}]}">{[{row.name}]}</a></td>
+              <td>{[{row.status}]}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -45,7 +70,32 @@
     <div class="panel panel-default">
       <div class="panel-heading">Category</div>
       <div class="panel-body">
-        <table class="table"></table>
+        <form class="form-inline" role="form">
+          <div class="form-group">
+            <div class="input-group">
+              <input type="text" class="form-control" placeholder="Search">
+              <span class="input-group-btn">
+                <button class="btn btn-default" type="button"><i class="fa fa-search"></i></button>
+              </span>
+            </div>
+          </div>
+          <a class="btn btn-default pull-right" title="Add Category" href="#/category/create"><i class="fa fa-plus"></i></a>
+        </form>
+        
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr ng-repeat="row in category.results">
+              <td><a href="#/category/{[{row.id}]}">{[{row.name}]}</a></td>
+              <td>{[{row.status}]}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
     </div>

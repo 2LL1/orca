@@ -1,4 +1,4 @@
-var orcaApp = angular.module('orcaApp', ['ngRoute', 'orcaControllers'])
+var orcaApp = angular.module('orcaApp', ['ngRoute', 'xeditable', 'orcaControllers', 'orcaServices'])
 
 orcaApp.config(['$routeProvider', function($routeProvider) {
   $routeProvider.
@@ -10,6 +10,9 @@ orcaApp.config(['$routeProvider', function($routeProvider) {
     when('/universe/:univID', {templateUrl: 'universe.html', controller: 'UniverseDetailCtrl'}).
     when('/category', {templateUrl: 'category-list.html', controller: 'CategoryListCtrl'}).
     when('/category/:catID', {templateUrl: 'category.html', controller: 'CategoryDetailCtrl'}).
+    
+    when('/report', {templateUrl: 'report.html', controller: 'ReportCtrl'}).
+
     when('/admin', {templateUrl: 'admin.html', controller: 'AdminCtrl'}).
     otherwise({redirectTo: '/home'});
 }]);
@@ -17,12 +20,32 @@ orcaApp.config(['$routeProvider', function($routeProvider) {
 
 Madlee.angular_config(orcaApp)
 
+orcaApp.run(['editableOptions', function(editableOptions) {
+  editableOptions.theme = 'bs3'; // bootstrap3 theme. Can be also 'bs2', 'default'
+}]);
+
 var orcaControllers = angular.module('orcaControllers', []);
 
-orcaControllers.controller('HomeCtrl', ['$scope', '$http', function ($scope, $http) {
-	Madlee.login_first()
-  Madlee.active_navbar_tab('home')
-}]);
+orcaServices = angular.module('orcaServices', ['ngResource'])
+
+
+orcaServices.factory('Alpha', function($resource){
+  return $resource('alpha/:alphaID.json', {}, {
+    query: {method:'GET', params:{alphaID:''}, isArray:false},
+  });
+});
+
+orcaServices.factory('Universe', function($resource){
+  return $resource('universe/:universeID.json', {}, {
+    query: {method:'GET', params:{universeID:''}, isArray:false},
+  });
+});
+
+orcaServices.factory('Category', function($resource){
+  return $resource('category/:categoryID.json', {}, {
+    query: {method:'GET', params:{categoryID:''}, isArray:false},
+  });
+});
 
 orcaControllers.controller('LoginCtrl', ['$scope', '$http', function ($scope, $http) {
   if (is_undefined(Madlee.user)) {
@@ -41,11 +64,35 @@ orcaControllers.controller('LoginCtrl', ['$scope', '$http', function ($scope, $h
 
     $http.post('/madlee/login.json', data).success(function(data) {
       window.location = '#/home'
-      
     }).error(function() {
 
     })
-    
   }
 }]);
 
+
+orcaControllers.filter('timeshift',function(){
+    return function(v) {
+      if (is_undefined(v)) {
+        return ''
+      }
+      else {
+        return Madlee.timeshift(v)
+      }
+    }
+});
+
+
+
+orcaControllers.controller('HomeCtrl', ['$scope', 'Alpha', 'Universe', 'Category',
+  function ($scope, Alpha, Universe, Category) 
+{
+  Madlee.login_first()
+  Madlee.active_navbar_tab('home')
+
+  $scope.alphas = Alpha.query()
+  $scope.universe = Universe.query()
+  $scope.category = Category.query()
+
+
+}]);

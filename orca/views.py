@@ -12,17 +12,26 @@ class LogForEntryViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = LogForEntrySerializer
     queryset = LogForEntry.objects.all()
 
-class AlphaViewSet(viewsets.ReadOnlyModelViewSet):
+class AlphaViewSet(viewsets.ModelViewSet):
     serializer_class = AlphaSerializer
     queryset = Alpha.objects.all()
 
-class UniverseViewSet(viewsets.ReadOnlyModelViewSet):
+    def get_queryset(self):
+        return self.queryset.filter(owner=self.request.user)
+
+class UniverseViewSet(viewsets.ModelViewSet):
     serializer_class = UniverseSerializer
     queryset = Universe.objects.all()
 
-class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
+    def get_queryset(self):
+        return self.queryset.filter(owner=self.request.user)
+
+class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
     queryset = Category.objects.all()
+
+    def get_queryset(self):
+        return self.queryset.filter(owner=self.request.user)
 
 def render_html(request, path, basic_path='orca/%s.html'):
     context = {'user':request.user}

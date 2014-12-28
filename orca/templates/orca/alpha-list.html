@@ -9,23 +9,28 @@
     <table class="table table-condensed table-hover table-striped">
       <thead>
         <tr>
-          <th>#</th><th>Name</th><th>Owner</th><th>Created on</th><th>Status</th>
+          <th>#</th><th>Name</th><th>Owner</th><th>Describe</th><th>Created on</th>
         </tr>
       </thead>
       <tbody class="align-center">
-        <tr ng-repeat="row in assays">
+        <tr ng-repeat="row in alphas.results">
           <td>
-            <a href="#/assay/{[{row.id}]}">
+            {[{row.id}]}
+          </td>
+          <td>
+            <a href="#/alpha/{[{row.id}]}">
               {[{row.name}]}
             </a>
           </td>
-          <td>{[{row.project.name}]}</td>
-          <td>{[{row.mapping.id}]}</td>
-          <td>{[{row.scientist}]}</td>
-          <td>{[{row.required_date}]}</td>
-          <td>{[{row.request_id}]}</td>
-          <td>{[{row.status}]}</td>
-          <td>{[{row.timestamp0}]}</td>
+          <td>
+            {[{row.owner.username}]}
+          </td>
+          <td>
+            {[{row.describe}]}
+          </td>
+          <td>
+            {[{row.timestamp0|timeshift}]}
+          </td>
         </tr>
       </tbody>
     </table>

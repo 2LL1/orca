@@ -1,4 +1,4 @@
-orcaControllers.controller('AlphaListCtrl', ['$scope', '$http', function ($scope, $http) {
+orcaControllers.controller('AlphaListCtrl', ['$scope', 'Alpha', function ($scope, Alpha) {
     Madlee.login_first()
     Madlee.active_navbar_tab('alpha')
     
@@ -60,10 +60,35 @@ orcaControllers.controller('AlphaListCtrl', ['$scope', '$http', function ($scope
 
   
   jQuery('#div-filter').treeview({data: filters, levels: 3});
+
+  $scope.alphas = Alpha.query()
+
 }]);
 
-orcaControllers.controller('AlphaDetailCtrl', ['$scope', '$http', function ($scope, $http) {
+orcaControllers.controller('AlphaDetailCtrl', ['$scope', '$routeParams', 'Alpha', 
+  function ($scope, $routeParams, Alpha) {
     Madlee.login_first()
     Madlee.active_navbar_tab('alpha')
+
+    if ($routeParams.alphaID === 'create') {
+      $scope.alpha = {
+        id: null,
+        name: "New Alpha"
+      }
+    }
+    else {
+      $scope.alpha = Alpha.get({alphaID: $routeParams.alphaID}, function(alpha) {
+        
+      });
+    }
+
+    $scope.save = function() {
+      if (is_undefined($scope.alpha)) {
+
+      }
+      else {
+        Alpha.save($scope.alpha)
+      }
+    }
 
 }]);
