@@ -91,7 +91,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.7/howto/static-files/
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = (r'C:/Madlee/Incoming/Program/HTML5/static/', r'D:/Incoming/Program/HTML5/static/',)
+STATICFILES_DIRS = (r'C:/Madlee/Incoming/Program/HTML5/static/', r'D:/Incoming/Program/HTML5/static/', r'/home/lifeng/html/static/')
 
 REST_FRAMEWORK = {
     'PAGINATE_BY': 50,                 # Default to 10
