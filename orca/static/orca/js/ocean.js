@@ -1,6 +1,8 @@
-orcaControllers.controller('AlphaListCtrl', ['$scope', 'Alpha', function ($scope, Alpha) {
+orcaControllers.controller('OceanListCtrl', ['$scope', 'Ocean', 
+	function ($scope, Ocean) 
+{
     Madlee.login_first()
-    Madlee.active_navbar_tab('alpha')
+    Madlee.active_navbar_tab('ocean')
     
     var filters = [{text: 'Filters', icon: 'fa fa-filter',
     nodes: [
@@ -61,52 +63,25 @@ orcaControllers.controller('AlphaListCtrl', ['$scope', 'Alpha', function ($scope
   
   jQuery('#div-filter').treeview({data: filters, levels: 3});
 
-  $scope.alphas = Alpha.query()
+  $scope.records = Ocean.query()
 
 }]);
 
-orcaControllers.controller('AlphaDetailCtrl', ['$scope', '$routeParams', 'Alpha', 
-  function ($scope, $routeParams, Alpha) {
+orcaControllers.controller('OceanDetailCtrl', ['$scope', '$routeParams', 'Ocean', 
+  function ($scope, $routeParams, Ocean) {
     Madlee.login_first()
-    Madlee.active_navbar_tab('alpha')
+    Madlee.active_navbar_tab('ocean')
 
-    $scope.data_loaded = false
-
-    if ($routeParams.alphaID === 'create') {
-      $scope.alpha = {
+    if ($routeParams.oceanID === 'create') {
+      $scope.record = {
         id: null,
-        name: "New Alpha"
+        name: "New Ocean"
       }
     }
     else {
-      $scope.alpha = Alpha.get({alphaID: $routeParams.alphaID}, function(alpha) {
-
+      $scope.record = Ocean.get({oceanID: $routeParams.oceanID}, function(record) {
         
       });
     }
-
-    $scope.save = function() {
-      if (is_undefined($scope.alpha)) {
-
-      }
-      else {
-        Alpha.save($scope.alpha)
-      }
-    }
-
-    $scope.hello="print 'Hello, World.'"
-
-    $scope.editorOptions = {
-      lineWrapping : true,
-      lineNumbers: true,
-      // readOnly: 'nocursor',
-      mode: 'python'
-    }
-
-    jQuery('#tab-alpha a').click(function (e) {
-      e.preventDefault()
-      jQuery(this).tab('show')
-      $scope.data_loaded = true
-    });
 
 }]);

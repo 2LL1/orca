@@ -4,6 +4,8 @@ orcaApp.config(['$routeProvider', function($routeProvider) {
   $routeProvider.
     when('/home', {templateUrl: 'home.html',   controller: 'HomeCtrl'}).
     when('/login', {templateUrl: 'login.html',   controller: 'LoginCtrl'}).
+    when('/ocean', {templateUrl: 'ocean-list.html', controller: 'OceanListCtrl'}).
+    when('/ocean/:oceanID', {templateUrl: 'ocean.html', controller: 'OceanDetailCtrl'}).
     when('/alpha', {templateUrl: 'alpha-list.html', controller: 'AlphaListCtrl'}).
     when('/alpha/:alphaID', {templateUrl: 'alpha.html', controller: 'AlphaDetailCtrl'}).
     when('/universe', {templateUrl: 'universe-list.html', controller: 'UniverseListCtrl'}).
@@ -27,6 +29,12 @@ orcaApp.run(['editableOptions', function(editableOptions) {
 var orcaControllers = angular.module('orcaControllers', []);
 
 orcaServices = angular.module('orcaServices', ['ngResource'])
+
+orcaServices.factory('Ocean', function($resource){
+  return $resource('ocean/:oceanID.json', {}, {
+    query: {method:'GET', params:{oceanID:''}, isArray:false},
+  });
+});
 
 
 orcaServices.factory('Alpha', function($resource){
@@ -82,6 +90,13 @@ orcaControllers.filter('timeshift',function(){
     }
 });
 
+
+orcaControllers.filter('prettify', ['$sce', function($sce){
+    return function(text) {
+        var result = prettyPrintOne(text);
+        return  $sce.trustAsHtml(result)
+    }
+}])
 
 
 orcaControllers.controller('HomeCtrl', ['$scope', 'Alpha', 'Universe', 'Category',

@@ -7,11 +7,12 @@ from django.contrib import admin
 
 from rest_framework.routers import DefaultRouter
 from madlee import urls as madlee_urls
-from orca.views import LogForEntryViewSet, AlphaViewSet, UniverseViewSet, CategoryViewSet
+from orca.views import *
 
 
 router = DefaultRouter(trailing_slash=False)
 router.register(r'log', LogForEntryViewSet)
+router.register(r'ocean', OceanViewSet)
 router.register(r'alpha', AlphaViewSet)
 router.register(r'universe', UniverseViewSet)
 router.register(r'category', CategoryViewSet)

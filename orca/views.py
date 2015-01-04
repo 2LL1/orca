@@ -4,35 +4,44 @@ from __future__ import print_function
 
 
 from django.shortcuts import render
-from rest_framework import viewsets
+from django.db.models import Q
+from rest_framework import viewsets, permissions
 
 from orca.serializers import *
+
+class OrcaViewSet(viewsets.ReadOnlyModelViewSet):
+    def get_queryset(self):
+        result = self.queryset
+        if not self.request.user.is_superuser:
+            q = Q(owner=self.request.user) | Q(status='P')
+            result = self.queryset.filter(q)
+
+        return result
+
 
 class LogForEntryViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = LogForEntrySerializer
     queryset = LogForEntry.objects.all()
 
-class AlphaViewSet(viewsets.ModelViewSet):
+
+class OceanViewSet(OrcaViewSet):
+    serializer_class = OceanSerializer
+    queryset = Ocean.objects.all()
+
+
+class AlphaViewSet(OrcaViewSet):
     serializer_class = AlphaSerializer
     queryset = Alpha.objects.all()
 
-    def get_queryset(self):
-        return self.queryset.filter(owner=self.request.user)
-
-class UniverseViewSet(viewsets.ModelViewSet):
+class UniverseViewSet(OrcaViewSet):
     serializer_class = UniverseSerializer
     queryset = Universe.objects.all()
 
-    def get_queryset(self):
-        return self.queryset.filter(owner=self.request.user)
-
-class CategoryViewSet(viewsets.ModelViewSet):
+class CategoryViewSet(OrcaViewSet):
     serializer_class = CategorySerializer
     queryset = Category.objects.all()
 
-    def get_queryset(self):
-        return self.queryset.filter(owner=self.request.user)
-
+   
 def render_html(request, path, basic_path='orca/%s.html'):
     context = {'user':request.user}
     return render(request, basic_path % path, context)

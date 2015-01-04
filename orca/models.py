@@ -6,15 +6,17 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils.encoding import python_2_unicode_compatible
 
+
+
 STATUS_CHOICES = [  ('D', 'DEVELOPING'),    # In developing. No auto-update will be applied.
-                    ('T', 'TESTING'),       # In testing. Will be update everyday.
-                    ('P', 'PRODUCT'),       # A stable production. Will be update everyday.
-                    ('X', 'DEPRECATED')     # Deprecated. 
+                    ('T', 'TESTING'),       # In testing. Will be update everyday. But other user cannot read.
+                    ('P', 'PUBLISHED'),     # A stable production. Will be update everyday. User can read data.
+                    ('X', 'DEPRECATED')     # Deprecated. Invisible to users.
                 ]
 
 @python_2_unicode_compatible
 class BasicEntry(models.Model):
-    """Basic class for Alpha, Universe and Category"""
+    """Basic class for Ocean, Alpha, Universe and Category. """
 
     # Name of it.
     name = models.CharField(max_length=200)
@@ -26,7 +28,8 @@ class BasicEntry(models.Model):
     # If it is None, NO update. Otherwize, it will update every day on specific time.
     # Time is in format hhmm. For example: 1400 means 2:00 pm on machine time.
     update_on = models.IntegerField(null=True, default=None)
-    # The python code to run for updating.
+    
+    # The python code to run for updating. Only owner can read it.
     update_code = models.TextField(default='')
 
     # The status of the entry.
@@ -41,7 +44,6 @@ class BasicEntry(models.Model):
 
     class Meta:
         ordering = ['-timestamp0']
-        permissions = ( ('can_deploy', 'Can deploy as PRODUCT'), )
 
 @python_2_unicode_compatible
 class LogForEntry(models.Model):
@@ -57,7 +59,10 @@ class LogForEntry(models.Model):
 
     class Meta:
         ordering = ['-timestamp0']
-        order_with_respect_to = 'entry'
+
+class Ocean(BasicEntry):
+    """A set of data"""
+    pass
 
 class Alpha(BasicEntry):
     """Alpha. You know what it is."""
@@ -76,7 +81,6 @@ class AlphaItem(models.Model):
         return '[%06d] %06d: %.4f' % (self.date, self.stock, self.value)
 
     class Meta:
-        order_with_respect_to = 'alpha'
         unique_together = ('alpha', 'date', 'stock')
 
 class Universe(BasicEntry):
@@ -96,7 +100,6 @@ class UniverseItem(models.Model):
         return '[%06d] %06d' % (self.date, self.stock)
 
     class Meta:
-        order_with_respect_to = 'universe'
         unique_together = ('universe', 'date', 'stock')
 
 

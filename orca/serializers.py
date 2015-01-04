@@ -2,49 +2,35 @@ from __future__ import unicode_literals
 from __future__ import division
 from __future__ import print_function
 
+from pygments.lexers import get_lexer_by_name
+from pygments.formatters.html import HtmlFormatter
+from pygments import highlight
+
 from rest_framework import serializers
 from madlee.serializers import UserSerializer
-from orca.models import BasicEntry, LogForEntry, Alpha, AlphaItem, Universe, UniverseItem, Category, CategoryItem
+from orca.models import BasicEntry, LogForEntry, Ocean, Alpha, AlphaItem, Universe, UniverseItem, Category, CategoryItem
 
 class BasicEntrySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = BasicEntry
+    owner = UserSerializer()
+    author = UserSerializer()
 
 class LogForEntrySerializer(serializers.ModelSerializer):
     class Meta:
         model = LogForEntry        
 
-class AlphaSerializer(serializers.ModelSerializer):
-    owner = UserSerializer()
-    author = UserSerializer()
-
+class OceanSerializer(BasicEntrySerializer):
     class Meta:
         model = Alpha
 
-    def create(self, validated_data):
-        print (validated_data)
-        validated_data['author'] = validated_data['owner'] = self.request.user
-        return Alpha.objects.create(**validated_data)
-
-
-
-class AlphaItemSerializer(serializers.ModelSerializer):
+class AlphaSerializer(BasicEntrySerializer):
     class Meta:
-        model = AlphaItem
+        model = Alpha
 
-class UniverseSerializer(serializers.ModelSerializer):
+class UniverseSerializer(BasicEntrySerializer):
     class Meta:
         model = Universe
 
-class UniverseItemSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UniverseItem
-
-class CategorySerializer(serializers.ModelSerializer):
+class CategorySerializer(BasicEntrySerializer):
     class Meta:
         model = Category
-
-class CategoryItemSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CategoryItem
 
