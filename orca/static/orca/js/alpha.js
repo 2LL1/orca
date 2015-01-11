@@ -86,27 +86,82 @@ orcaControllers.controller('AlphaDetailCtrl', ['$scope', '$routeParams', 'Alpha'
     }
 
     $scope.save = function() {
+
+      
+
       if (is_undefined($scope.alpha)) {
 
       }
       else {
         Alpha.save($scope.alpha)
+
       }
     }
 
-    $scope.hello="print 'Hello, World.'"
-
-    $scope.editorOptions = {
-      lineWrapping : true,
-      lineNumbers: true,
-      // readOnly: 'nocursor',
-      mode: 'python'
-    }
+    
 
     jQuery('#tab-alpha a').click(function (e) {
       e.preventDefault()
       jQuery(this).tab('show')
       $scope.data_loaded = true
     });
+
+}]);
+
+
+
+orcaControllers.controller('AlphaEditCtrl', ['$scope', '$routeParams', '$http', 
+  function ($scope, $routeParams, $http) {
+    Madlee.login_first()
+    Madlee.active_navbar_tab('alpha')
+
+    $scope.DEFAULT_CODE = "# Define your code here.\n" +
+      "# This is an example.\n" +
+      "# [date1, date2) are a pair of date.\n" +
+      "# Save your output into variable result\n" +
+      "\n" +
+      "from orca import ocean\n" +
+      "import pandas\n" +
+      "import numpy\n" +
+      "\n" +
+      "window = 5\n" +
+      "\n" +
+      "close = ocean.get_frame('KDay.close', date1, date2, window)\n" +
+      "delta = close - pandas.rolling_mean(close, window)\n" +
+      "\n" +
+      "result = delta / close\n" +
+      "result = result[window:]\n" +
+      "\n"
+
+    $scope.data_loaded = false
+
+    if ($routeParams.alphaID === 'new') {
+      $scope.record = {
+        id: null,
+        name: "New Alpha",
+        describe: "Say something here.",
+        update_on: 'N/A',
+        status: 'D',
+        update_code: $scope.DEFAULT_CODE,
+        author: Madlee.user,
+        owner: Madlee.user
+        // timestamp0: moment().format('YYYY-MM-DD HH:mm:ss')
+      }
+    }
+    else {
+      
+    }
+
+    $scope.save = function() {
+      $routeParams.alphaID = 'HELLO'
+
+      // $http.post('alpha/'+ $routeParams.alphaID+ '.json', {data: $scope.record})
+    }
+
+    $scope.editor_options = {
+      lineWrapping : true,
+      lineNumbers: true,
+      mode: 'python'
+    }
 
 }]);

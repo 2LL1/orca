@@ -1,0 +1,58 @@
+<div class="row">
+  <div class="bs col-md-10">
+    <h1>
+      <a editable-text="record.name">{[{record.name}]}</a>
+    </h1>
+    <a href="#" editable-textarea="record.describe" e-rows="2" e-cols="80">
+      <pre>{[{ record.describe }]}</pre>
+    </a>
+    <p>
+      <i>Created by {[{record.author.username}]} on {[{record.timestamp0|timeshift}]}</i>
+    </p>
+  </div>
+  <div class="bs col-md-2" style="margin-top: 40px;">
+    <button class="btn btn-lg btn-primary pull-right" ng-click="save();"> <i class="fa fa-floppy-o"></i> Save </button>
+  </div>
+</div>
+<div class="row">
+
+  <div class="bs col-md-12 hr-2" id="message-panel">
+  </div>
+
+  <div class="bs col-md-12">
+    <form class="form-inline pull-right">
+      <div class="form-group">
+        <label class="sr-only">Status</label>
+        <div class="input-group">
+          <div class="input-group-addon" title="Auto update time"><i class="fa fa-bug"></i></div>
+          <select class="form-control" ng-model="record.status">
+            <option value="D">DEVELOPING</option>
+            <option value="T">TESTING</option>
+            <option value="P">PUBLISHED</option>
+            <option value="X">DEPRECATED</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="sr-only">Update on</label>
+        <div class="input-group">
+          <div class="input-group-addon" title="Auto update time"><i class="fa fa-clock-o"></i></div>
+          <input type="text" class="form-control" placeholder="Update Time" ng-model="record.update_on">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="sr-only">Owner</label>
+        <div class="input-group">
+          <div class="input-group-addon" title="Alpha Owner"><i class="fa fa-user"></i></div>
+          <input type="text" class="form-control" readonly ng-model="record.owner.username">
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="bs col-md-12">
+    <ui-codemirror  ui-codemirror-opts="editor_options" rows="50" ng-model="record.update_code">
+    </ui-codemirror>
+  </div>
+
+</div>

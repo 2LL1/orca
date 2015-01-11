@@ -12,7 +12,7 @@ td {
     text-align: center;
 }
 .range-picker {
-    cursor: pointer; !important
+    cursor: pointer !important;
 }
 
 .datepicker{

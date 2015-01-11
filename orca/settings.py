@@ -10,6 +10,8 @@ https://docs.djangoproject.com/en/1.7/ref/settings/
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
+from orca.tools import *
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
@@ -91,7 +93,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.7/howto/static-files/
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = (r'C:/Madlee/Incoming/Program/HTML5/static/', r'D:/Incoming/Program/HTML5/static/', r'/home/lifeng/html/static/')
+STATICFILES_DIRS = (r'C:/Madlee/Incoming/Program/HTML5/static/', r'D:/Incoming/Program/HTML5/static/', r'/home/lifeng/html/static/', '../../html/static/')
 
 REST_FRAMEWORK = {
     'PAGINATE_BY': 50,                 # Default to 10
@@ -99,5 +101,41 @@ REST_FRAMEWORK = {
     'MAX_PAGINATE_BY': 100,            # Maximum limit allowed when using `?page_size=xxx`.
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
+    ), 
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
     )
+}
+
+ORCA_CONFIG = {
+    
+    #Base folder for all databases. Should been created before execute.
+    'DB_PATH': r"db",
+
+    'CACHE_PATH':  r"cache",
+
+    # Tune for performance
+    'DB_PRAGMA': """PRAGMA synchronous=OFF;
+    PRAGMA journal_mode=MEMORY;
+    PRAGMA cache_size=-100000;
+    PRAGMA locking_mode=EXCLUSIVE;
+    """,
+
+    'KDAY_SOURCE': 'jydb/jydb@jydb',
+
+    'NLS_LANG': 'AMERICAN_AMERICA.UTF8',
+
+    'REFRESH_HINTS': {
+        # 'S05': K05_DATA_FOLDER,
+        # 'I05': K05_DATA_FOLDER,
+        # 'S01': K01_DATA_FOLDER,
+        # 'I01': K01_DATA_FOLDER,
+        'SDAY': 'jydb/jydb@jydb',
+    },
+
+    'FRAME_DIRECTION': ['stock', 'stamp'], # Swap it if you want to use timestamp as columns
+
+
+    'DATE_0': Date(2000, 1, 1)
+
 }

@@ -1,4 +1,4 @@
-var orcaApp = angular.module('orcaApp', ['ngRoute', 'xeditable', 'orcaControllers', 'orcaServices'])
+var orcaApp = angular.module('orcaApp', ['ngRoute', 'xeditable', 'ui.codemirror', 'orcaControllers', 'orcaServices'])
 
 orcaApp.config(['$routeProvider', function($routeProvider) {
   $routeProvider.
@@ -7,7 +7,8 @@ orcaApp.config(['$routeProvider', function($routeProvider) {
     when('/ocean', {templateUrl: 'ocean-list.html', controller: 'OceanListCtrl'}).
     when('/ocean/:oceanID', {templateUrl: 'ocean.html', controller: 'OceanDetailCtrl'}).
     when('/alpha', {templateUrl: 'alpha-list.html', controller: 'AlphaListCtrl'}).
-    when('/alpha/:alphaID', {templateUrl: 'alpha.html', controller: 'AlphaDetailCtrl'}).
+    when('/alpha-view/:alphaID', {templateUrl: 'alpha.html', controller: 'AlphaDetailCtrl'}).
+    when('/alpha-edit/:alphaID', {templateUrl: 'alpha-edit.html', controller: 'AlphaEditCtrl'}).
     when('/universe', {templateUrl: 'universe-list.html', controller: 'UniverseListCtrl'}).
     when('/universe/:univID', {templateUrl: 'universe.html', controller: 'UniverseDetailCtrl'}).
     when('/category', {templateUrl: 'category-list.html', controller: 'CategoryListCtrl'}).

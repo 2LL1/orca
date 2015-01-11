@@ -1,11 +1,12 @@
 <div class="row">
   <div class="bs col-md-12">
     <h1>
-      <a editable-text="alpha.name">{[{ alpha.name || "New Alpha" }]}</a>
+      {[{ alpha.name || "New Alpha" }]}
     </h1>
   </div>
   <div class="bs col-md-12">
-    <p>{[{alpha.describe}]}. <i>Created by {[{alpha.author.username}]} on {[{alpha.timestamp0|timeshift}]}</i>
+    <p>{[{alpha.describe}]}. 
+    <i>Created by {[{alpha.author.username}]} on {[{alpha.timestamp0|timeshift}]}</i>
     </p>
   </div>
 
