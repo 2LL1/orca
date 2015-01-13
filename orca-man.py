@@ -12,10 +12,16 @@ import sys
 import logging
 from argparse import ArgumentParser
 
-from orca.db import ocean
+from orca.ocean import ocean
 from orca.tools import *
 
-import settings
+# import settings
+# from django.conf import settings
+import os
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "orca.settings")
+sys.path.append(r'../../madlee')
+
 
 logger = logging.getLogger('main')
 
