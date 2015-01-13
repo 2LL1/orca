@@ -18,7 +18,7 @@ import logging
 import numpy
 from pandas import read_sql, read_pickle
 
-import settings
+from django.conf import settings
 from orca.tools import *
 
 logger = logging.getLogger('orca.db')
@@ -34,15 +34,11 @@ SQL_INSERT_OCEAN = """INSERT INTO %(table_name)s
     (%(columns)s) VALUES (%(questions)s)
 """
 
-SQL_GET_VALUE_D = """SELECT stock, date, date*10000 AS stamp, %(value_name)s 
+SQL_GET_VALUE_D = """SELECT stock, date, %(value_name)s 
     FROM %(table_name)s
     %(where)s
 """
 
-SQL_GET_VALUE_DT = """SELECT stock, date, time, date*10000+time AS stamp, %(value_name)s 
-    FROM %(table_name)s
-    %(where)s
-"""
 
 SQL_COUNT_STOCK = """SELECT COUNT(DISTINCT stock)
     FROM %(table_name)s
@@ -57,6 +53,12 @@ SQL_COUNT_DATE = """SELECT COUNT(DISTINCT date)
 SQL_COUNT_TIME = """SELECT COUNT(DISTINCT time) 
     FROM %(table_name)s
     %(where)s
+"""
+
+SQL_SELECT_DAYS = """SELECT DISTINCT date 
+    FROM %(table_name)s
+    %(where)s
+    ORDER BY date
 """
 
 SQL_MAX_DATE = """SELECT MAX(date) 
@@ -147,12 +149,12 @@ class OceanSqlite3(BasicOcean):
 
     def __init__(self, name, fields):
         """Init the ocean with the path to the db file and the name of the table or view"""
-        path = join_path(settings.DB_PATH, name + '.db')
+        path = join_path(settings.ORCA_DB_PATH, name + '.db')
         self.__conn = sqlite3.connect(path)
         self.__name = name
         self.__table = 'T_%s' % name
         self.__fields = fields
-        self.execute_sqls(settings.DB_PRAGMA)
+        self.execute_sqls(settings.ORCA_DB_PRAGMA)
 
     @property
     def name(self):
@@ -228,11 +230,19 @@ class OceanSqlite3(BasicOcean):
         """Count the stock points between [day1, day2)"""
         return self._count_by_sql(SQL_COUNT_STOCK, cursor, **kwargs)
 
-    def count_time(self, cursor=None, **kwargs):
-        """Count the stock points between [day1, day2)"""
-        return self._count_by_sql(SQL_COUNT_TIME, cursor, **kwargs)
+    def get_dates(self, cursor=None, **kwargs):
+        sql = SQL_SELECT_DAYS
+        where, params = _build_sql_where(**kwargs)
+        sql %= {'table_name':self.__table, 'where': where}
+        if cursor == None:
+            cursor = self.conn.cursor()
 
-    @abc.abstractmethod
+        logger.debug('Start load SQL Data %s', sql)
+        t1 = Timer()
+        result = read_sql(sql, self.conn, params=params)
+        logger.debug('Loaded %d rows in %s', len(result), t1)
+        return result['date']
+
     def stack(self, names, cursor=None, **kwargs):
         try:
             names = names.split()
@@ -251,28 +261,16 @@ class OceanSqlite3(BasicOcean):
         logger.debug('Loaded %d rows in %s', len(result), t1)
         return result
 
-    def frames(self, names, cursor=None, **kwargs):
+    def frame(self, name, cursor=None, **kwargs):
         """return a value frame between [day1, day2). 
             name: The column name of the value"""
 
-        try:
-            names = names.split()
-        except AttributeError:
-            pass
-        
-        stacks = self.stack(names, cursor, **kwargs)
+        stacks = self.stack(name, cursor, **kwargs)
         logger.debug('Start Pivot stacks')
         t1 = Timer()
-        result = {}
-        for i in names:
-            result[i] = stacks.pivot(settings.FRAME_DIRECTION[0], settings.FRAME_DIRECTION[1], i)
-            if settings.FRAME_DIRECTION[0] == 'stock':
-                result[i].index = numpy.char.mod('%06d', result[i].index)
-            if settings.FRAME_DIRECTION[1] == 'stock':
-                result[i].columns = numpy.char.mod('%06d', result[i].columns)
-
+        result = stacks.pivot('date', 'stock', name)
+        result.columns = numpy.char.mod('%06d', result.columns)
         logger.debug('Finished pivoting in %s', t1)
-        
         return result
 
     def push_rows(self, rows, cursor=None):
@@ -295,13 +293,13 @@ class OceanSqlite3(BasicOcean):
         output = kwargs.get('output', self.name)
         for k, v in frames.iteritems():
             logger.info('Saving cache %s.%s', output, k)
-            filename = join_path(settings.CACHE_PATH, output+'.'+k)
+            filename = join_path(settings.ORCA_CACHE_PATH, output+'.'+k)
             v.to_pickle(filename)
         logger.info('%d cache(s) were saved in %s.', len(frames), timer)
 
 
 def load_cache(name):
-    fullname = join_path(settings.CACHE_PATH, name)
+    fullname = join_path(settings.ORCA_CACHE_PATH, name)
     return read_pickle(fullname)
 
 
@@ -310,13 +308,6 @@ class BasicOceanD(OceanSqlite3):
     PRIMARY_KEY = ['date', 'stock', ]
     INDEXES = ['stock']
     SQL_GET_VALUE = SQL_GET_VALUE_D
-
-
-class BasicOceanDT(OceanSqlite3):
-    """Ocean with date and time."""
-    PRIMARY_KEY = ['time', 'date', 'stock']
-    INDEXES = ['stock']
-    SQL_GET_VALUE = SQL_GET_VALUE_DT
 
 class MixinFromCSV(object):
     """Original data was saved in CSV file."""
@@ -368,33 +359,6 @@ class MixinFromCSV(object):
             date +=  ONE_DAY
         logger.info('Finished of refreshing database %s', self.name)
 
-class OceanKmin(BasicOceanDT, MixinFromCSV):
-    COLUMN_NAMES = "price   open    close   high    low     vol     amount  cjbs    yclose  syl1    syl2    buy1    buy2    buy3    buy4    buy5    sale1   sale2   sale3   sale4   sale5   bc1     bc2     bc3     bc4     bc5     sc1     sc2     sc3     sc4     sc5     wb      lb      zmm     buy_vol buy_amount  sale_vol    sale_amount w_buy   w_sale  sectional_buy_vol   sectional_buy_amount    sectional_sale_vol  sectional_sale_amount   sectional_w_buy sectional_w_sale    sectional_yclose    sectional_open  sectional_close sectional_high  sectional_low   sectional_vol   sectional_amount    sectional_cjbs  sectional_wb".split()
-
-    def __init__(self, name, filter):
-        BasicOceanDT.__init__(self, name, OceanKmin.COLUMN_NAMES)
-        self.__filter = filter
-
-    def uniform(self, row, titles):
-        if self.__filter(row[0]):
-            stock = int(row[0][2:])
-            stamp = DateTime.strptime(row[2], '%Y-%m-%d %H:%M:%S')
-            date = stamp.year*10000 + stamp.month*100 + stamp.day
-            time = stamp.hour * 100 + stamp.minute
-            return [stock, date, time] + [float(i) for i in row[3:]]
-        else:
-            return None
-
-is_stock = lambda token: token[:4] in {'SH60', 'SZ30', 'SZ00'}
-is_index = lambda token: not is_stock(token)
-
-ocean_man['S05'] = OceanKmin, is_stock
-ocean_man['I05'] = OceanKmin, is_index
-
-ocean_man['S01'] = OceanKmin, is_stock
-ocean_man['I01'] = OceanKmin, is_index
-
-
 class MixinFromOracle(object):
     def __init__(self, sql):
         self.SQL_SOURCE = sql
@@ -426,13 +390,13 @@ class MixinFromOracle(object):
         import os
 
         logger.info('Began to refresh database %s.', self.name)        
-        os.environ['NLS_LANG'] = settings.NLS_LANG
+        os.environ['NLS_LANG'] = settings.ORCA_NLS_LANG
         conn = cx_Oracle.connect(conn_string)
         cursor = conn.cursor()
 
         t1 = self.max_date()
         if t1 == None:
-            t1 = settings.DATE_0
+            t1 = settings.ORCA_DATE_0
         else:
             t1 = Date(t1 / 10000, t1 % 10000 / 100, t1 % 100) + ONE_DAY
 
@@ -457,4 +421,12 @@ class OceanKDay(BasicOceanD, MixinFromOracle):
         return row
 
 ocean_man['SDAY'] = OceanKDay, SQL_SELECT_KDAY_STOCK_FROM_ORACLE
+
+def get_frame(hints, date1, date2, window=None):
+    hints = hints.split('.')
+    o = ocean_man[hints[0]]
+    return o.frame('.'.join(hints[1:]), date1=date1, date2=date2)
+
+def get_trading_days(date1, date2, window=None):
+    return ocean_man['SDAY'].get_dates(date1=date1, date2=date2)
 

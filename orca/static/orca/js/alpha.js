@@ -126,7 +126,7 @@ orcaControllers.controller('AlphaEditCtrl', ['$scope', '$routeParams', '$http',
       "\n" +
       "window = 5\n" +
       "\n" +
-      "close = ocean.get_frame('KDay.close', date1, date2, window)\n" +
+      "close = ocean.get_frame('SDAY.close', date1, date2, window)\n" +
       "delta = close - pandas.rolling_mean(close, window)\n" +
       "\n" +
       "result = delta / close\n" +

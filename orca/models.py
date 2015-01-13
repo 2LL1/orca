@@ -66,7 +66,17 @@ class Ocean(BasicEntry):
 
 class Alpha(BasicEntry):
     """Alpha. You know what it is."""
-    pass
+    
+    def generate(self, date1, date2, code=None):
+        """Generate alpha between [date1, date2)"""
+        if not code:
+            code = self.update_code
+
+        vars = {'date1': date1, 'date2': date2}
+        exec(code, {}, vars)
+        return vars['result']
+
+
 
 @python_2_unicode_compatible
 class AlphaItem(models.Model):
