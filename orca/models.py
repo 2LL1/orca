@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 from __future__ import division
 from __future__ import print_function
 
-from django.db import models
+from django.db import models, connection
 from django.contrib.auth.models import User
 from django.utils.encoding import python_2_unicode_compatible
 
@@ -13,6 +13,21 @@ STATUS_CHOICES = [  ('D', 'DEVELOPING'),    # In developing. No auto-update will
                     ('P', 'PUBLISHED'),     # A stable production. Will be update everyday. User can read data.
                     ('X', 'DEPRECATED')     # Deprecated. Invisible to users.
                 ]
+
+SQL_SELECT_MAX_DATE = """SELECT MAX(date) 
+    FROM %(table_name)s 
+    WHERE %(node_name)s__id = ?
+"""
+
+SQL_SELECT_MIN_DATE = """SELECT MIN(date) 
+    FROM %(table_name)s 
+    WHERE %(node_name)s__id = ?
+"""
+
+SQL_SELECT_ALPHA = """SELECT date, stock, value 
+    FROM orca_alphaitem 
+    WHERE alpha_id = ? AND 
+"""
 
 @python_2_unicode_compatible
 class BasicEntry(models.Model):
@@ -76,6 +91,33 @@ class Alpha(BasicEntry):
         exec(code, {}, vars)
         return vars['result']
 
+    def reset(self, date1=None, date2=None):
+        assert self.id
+
+    def update(self, date1, date2):
+        alpha = self.generate(date1, date2)
+        alpha = alpha[alpha['date'] >= date1 and alpha['date'] < date2]
+        alpha = alpha.stack().reset_index()
+        alpha.columns = ['date', 'stock', 'value']
+
+        alpha = alpha[pandas.notnan(alpha['value'])]
+        alpha['alpha_id'] = self.id
+        alpha.to_sql(connection, connection, if_exists='append', index=False)
+
+    def frame(self, date1=None, date2=None):
+        assert self.id
+
+    def max_date(self):
+        sql = SQL_SELECT_MAX_DATE % {'table_name': 'orca_alphaitem', 'node_name': 'alpha'}
+        cursor = connection.cursor()
+        if cursor.execute(sql, [self.id]):
+            return cursor.fetchone()
+
+    def min_date(self):
+        sql = SQL_SELECT_MIN_DATE % {'table_name': 'orca_alphaitem', 'node_name': 'alpha'}
+        cursor = connection.cursor()
+        if cursor.execute(sql, [self.id]):
+            return cursor.fetchone()
 
 
 @python_2_unicode_compatible

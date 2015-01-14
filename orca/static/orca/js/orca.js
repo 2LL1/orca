@@ -65,8 +65,8 @@ orcaControllers.controller('LoginCtrl', ['$scope', '$http', function ($scope, $h
   }
 
   $scope.login = function() {
-    var username = jQuery('#inputEmail').val()
-    var password = jQuery('#inputPassword').val()
+    var username = jQuery('#txt-username').val()
+    var password = jQuery('#txt-password').val()
     var remember = jQuery('#chk_remember_me').attr("checked")
 
     data = {email: username, password: password, keep_login: remember}

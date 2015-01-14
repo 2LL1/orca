@@ -61,17 +61,33 @@ SQL_SELECT_DAYS = """SELECT DISTINCT date
     ORDER BY date
 """
 
+SQL_MIN_DATE = """SELECT MAX(date) 
+    FROM %(table_name)s
+    %(where)s
+"""
+
 SQL_MAX_DATE = """SELECT MAX(date) 
     FROM %(table_name)s
     %(where)s
 """
 
-SQL_SELECT_KDAY_STOCK_FROM_ORACLE = """SELECT SecuCode, TradingDay, PrevClosePrice, OpenPrice, HighPrice, LowPrice, ClosePrice, TurnoverVolume, TurnoverValue, TurnoverDeals
+SQL_SELECT_KDAY_STOCK_FROM_ORACLE = """SELECT TradingDay, SecuCode, OpenPrice, HighPrice, LowPrice, ClosePrice, TurnoverVolume, TurnoverValue, TurnoverDeals
     FROM SecuMain INNER JOIN QT_DailyQuote ON SecuMain.InnerCode = QT_DailyQuote.InnerCode
     WHERE (secumarket = 83 AND SecuCode LIKE '60%%' OR secumarket = 90 AND SecuCode LIKE '30%%' OR secumarket = 90 AND SecuCode LIKE '00%%')
         AND TradingDay = to_date('%s', 'yyyy-mm-dd') 
     ORDER BY SecuCode
 """
+
+SQL_SELECT_SHIFT_DATE = ["""SELECT DISTINCT date FROM %(table_name)s
+    WHERE date < ?
+    ORDER BY date DESC
+""",
+
+"""SELECT DISTINCT date FROM %(table_name)s
+    WHERE date > ?
+    ORDER BY date
+"""]
+
 
 class OceanManager(object):
     def __init__(self):
@@ -108,28 +124,6 @@ def _build_sql_where(**args):
     if date2:
         where.append('date < ?')
         parameters.append(date2)
-
-    date_in = args.get('date_in', None)
-    if date_in:
-        v = list(date_in)
-        parameters += v
-        where.append('date IN (%s)' % ','.join('?'*len(v)))
-
-    time1 = args.get('time1', None)
-    if time1:
-        where.append('time >= ?')
-        parameters.append(time1)
-
-    time2 = args.get('time2', None)
-    if time2:
-        where.append('time < ?')
-        parameters.append(time2)
-
-    time_in = args.get('time_in', None)
-    if time_in:
-        v = list(time_in)
-        parameters += v
-        where.append('time IN (%s)' % ','.join('?'*len(v)))
 
     if where:
         where = 'WHERE ' + ' AND '.join(where)
@@ -219,8 +213,35 @@ class OceanSqlite3(BasicOcean):
         else:
             return 0
 
+    
+    def min_date(self, cursor=None, **kwargs):
+        return self._count_by_sql(SQL_MIN_DATE, cursor, **kwargs)
+
+
     def max_date(self, cursor=None, **kwargs):
         return self._count_by_sql(SQL_MAX_DATE, cursor, **kwargs)
+
+    def get_shift_date(self, date1, shift, cursor=None):
+        if shift != 0:
+            if shift > 0:
+                sql = SQL_SELECT_SHIFT_DATE[0]
+            else:
+                sql = SQL_SELECT_SHIFT_DATE[1]
+                shift = -shift
+
+            sql %= {'table_name': self.__table}
+
+            if cursor == None:
+                cursor = self.conn.cursor()
+
+            if cursor.execute(sql, (date1,)):
+                rows = cursor.fetchmany(shift+1)
+                if rows[0] == date1:
+                    date1 = rows[-2][0]
+                else:
+                    date1 = rows[-1][0]
+
+        return date1
 
     def count_date(self, cursor=None, **kwargs):
         """Count the stamp points between [day1, day2)"""
@@ -308,6 +329,8 @@ class BasicOceanD(OceanSqlite3):
     PRIMARY_KEY = ['date', 'stock', ]
     INDEXES = ['stock']
     SQL_GET_VALUE = SQL_GET_VALUE_D
+
+
 
 class MixinFromCSV(object):
     """Original data was saved in CSV file."""
@@ -408,7 +431,7 @@ class MixinFromOracle(object):
         logger.info('Finished of refreshing database %s', self.name)
 
 class OceanKDay(BasicOceanD, MixinFromOracle):
-    COLUMN_NAMES = "prev_close open high low close volume value deals".split()
+    COLUMN_NAMES = "open high low close volume value deals".split()
 
     def __init__(self, name, sql):
         BasicOceanD.__init__(self, name, OceanKDay.COLUMN_NAMES)
@@ -422,10 +445,16 @@ class OceanKDay(BasicOceanD, MixinFromOracle):
 
 ocean_man['SDAY'] = OceanKDay, SQL_SELECT_KDAY_STOCK_FROM_ORACLE
 
-def get_frame(hints, date1, date2, window=None):
+
+def get_shift_date(date1, shift):
+    return ocean_man['SDAY'].get_shift_date(date1, shift)
+
+def get_frame(hints, date1, date2, shift=0):
     hints = hints.split('.')
     o = ocean_man[hints[0]]
-    return o.frame('.'.join(hints[1:]), date1=date1, date2=date2)
+    date1 = get_shift_date(date1, shift)
+
+    return o.frame(hints[1], *hints[2:], date1=date1, date2=date2)
 
 def get_trading_days(date1, date2, window=None):
     return ocean_man['SDAY'].get_dates(date1=date1, date2=date2)

@@ -65,7 +65,7 @@ WSGI_APPLICATION = 'orca.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'NAME': os.path.join(BASE_DIR, 'db/orca.db'),
     }
 }
 
@@ -98,7 +98,7 @@ STATICFILES_DIRS = (r'C:/Madlee/Incoming/Program/HTML5/static/', r'D:/Incoming/P
 REST_FRAMEWORK = {
     'PAGINATE_BY': 50,                 # Default to 10
     'PAGINATE_BY_PARAM': 'page_size',  # Allow client to override, using `?page_size=xxx`.
-    'MAX_PAGINATE_BY': 100,            # Maximum limit allowed when using `?page_size=xxx`.
+    'MAX_PAGINATE_BY': 100,            # Maximum--0 limit allowed when using `?page_size=xxx`.
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ), 

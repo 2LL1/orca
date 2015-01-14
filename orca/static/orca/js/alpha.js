@@ -133,7 +133,7 @@ orcaControllers.controller('AlphaEditCtrl', ['$scope', '$routeParams', '$http',
       "result = result[window:]\n" +
       "\n"
 
-    $scope.data_loaded = false
+    
 
     if ($routeParams.alphaID === 'new') {
       $scope.record = {
@@ -158,10 +158,14 @@ orcaControllers.controller('AlphaEditCtrl', ['$scope', '$routeParams', '$http',
       // $http.post('alpha/'+ $routeParams.alphaID+ '.json', {data: $scope.record})
     }
 
+    $scope.codemirror_loaded = function(editor) {
+
+    }
+
     $scope.editor_options = {
       lineWrapping : true,
       lineNumbers: true,
-      mode: 'python'
+      mode: 'python',
     }
 
 }]);
