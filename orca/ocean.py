@@ -21,7 +21,7 @@ from pandas import read_sql, read_pickle
 from django.conf import settings
 from orca.tools import *
 
-logger = logging.getLogger('orca.db')
+logger = logging.getLogger('orca.ocean')
 
 SQL_CREATE_OCEAN = """CREATE TABLE IF NOT EXISTS T_%(name)s ( 
     %(columns)s, 
@@ -87,6 +87,8 @@ SQL_SELECT_SHIFT_DATE = ["""SELECT DISTINCT date FROM %(table_name)s
     WHERE date > ?
     ORDER BY date
 """]
+
+
 
 
 class OceanManager(object):
@@ -235,11 +237,8 @@ class OceanSqlite3(BasicOcean):
                 cursor = self.conn.cursor()
 
             if cursor.execute(sql, (date1,)):
-                rows = cursor.fetchmany(shift+1)
-                if rows[0] == date1:
-                    date1 = rows[-2][0]
-                else:
-                    date1 = rows[-1][0]
+                rows = cursor.fetchmany(shift)
+                date1 = rows[-1][0]
 
         return date1
 
@@ -458,4 +457,29 @@ def get_frame(hints, date1, date2, shift=0):
 
 def get_trading_days(date1, date2, window=None):
     return ocean_man['SDAY'].get_dates(date1=date1, date2=date2)
+
+class OceanAlpha(OceanSqlite3):
+    """Ocean with date only."""
+    PRIMARY_KEY = ['alpha_id', 'date', 'stock', ]
+    INDEXES = ['alpha_id stock']
+    COLUMN_NAMES = ['value']
+    SQL_GET_VALUE = SQL_GET_ALPHA
+
+    def __init__(self):
+        super(OceanAlpha, self).__init__('ALPHA', OceanAlpha.COLUMN_NAMES)
+
+ocean_man['ALPHA'] = OceanAlpha, ''
+
+
+class OceanUniverse(OceanSqlite3):
+    """Ocean with date only."""
+    PRIMARY_KEY = ['universe_id', 'date', 'stock', ]
+    INDEXES = ['universe_id stock']
+    COLUMN_NAMES = []
+    SQL_GET_VALUE = SQL_GET_UNIVERSE
+
+    def __init__(self):
+        super(OceanUniverse, self).__init__('UNIVERSE', OceanAlpha.COLUMN_NAMES)
+
+ocean_man['UNIVERSE'] = OceanUniverse, ''
 

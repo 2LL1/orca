@@ -18,7 +18,6 @@ class OrcaViewSet(viewsets.ReadOnlyModelViewSet):
 
         return result
 
-
 class LogForEntryViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = LogForEntrySerializer
     queryset = LogForEntry.objects.all()
@@ -36,10 +35,6 @@ class AlphaViewSet(OrcaViewSet):
 class UniverseViewSet(OrcaViewSet):
     serializer_class = UniverseSerializer
     queryset = Universe.objects.all()
-
-class CategoryViewSet(OrcaViewSet):
-    serializer_class = CategorySerializer
-    queryset = Category.objects.all()
 
    
 def render_html(request, path, basic_path='orca/%s.html'):

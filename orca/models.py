@@ -2,10 +2,14 @@ from __future__ import unicode_literals
 from __future__ import division
 from __future__ import print_function
 
+import logging
+
 from django.db import models, connection
 from django.contrib.auth.models import User
 from django.utils.encoding import python_2_unicode_compatible
 
+
+logger = logging.getLogger('orca.models')
 
 
 STATUS_CHOICES = [  ('D', 'DEVELOPING'),    # In developing. No auto-update will be applied.
@@ -81,6 +85,8 @@ class Ocean(BasicEntry):
 
 class Alpha(BasicEntry):
     """Alpha. You know what it is."""
+
+    ITEM_TABLE_NAME = 'orca_alphaitem'
     
     def generate(self, date1, date2, code=None):
         """Generate alpha between [date1, date2)"""
@@ -92,7 +98,7 @@ class Alpha(BasicEntry):
         return vars['result']
 
     def reset(self, date1=None, date2=None):
-        assert self.id
+        assert
 
     def update(self, date1, date2):
         alpha = self.generate(date1, date2)
@@ -108,13 +114,13 @@ class Alpha(BasicEntry):
         assert self.id
 
     def max_date(self):
-        sql = SQL_SELECT_MAX_DATE % {'table_name': 'orca_alphaitem', 'node_name': 'alpha'}
+        sql = SQL_SELECT_MAX_DATE % {'table_name': self.ITEM_TABLE_NAME, 'node_name': 'alpha'}
         cursor = connection.cursor()
         if cursor.execute(sql, [self.id]):
             return cursor.fetchone()
 
     def min_date(self):
-        sql = SQL_SELECT_MIN_DATE % {'table_name': 'orca_alphaitem', 'node_name': 'alpha'}
+        sql = SQL_SELECT_MIN_DATE % {'table_name': self.ITEM_TABLE_NAME, 'node_name': 'alpha'}
         cursor = connection.cursor()
         if cursor.execute(sql, [self.id]):
             return cursor.fetchone()
@@ -154,17 +160,3 @@ class UniverseItem(models.Model):
     class Meta:
         unique_together = ('universe', 'date', 'stock')
 
-
-class Category(BasicEntry):
-    """A set of specific stock"""
-    pass
-
-@python_2_unicode_compatible
-class CategoryItem(models.Model):
-    """Items in Category. Please do not access it directly. Use the 
-    functions in class Category to manipulate the items in data frame"""
-    category  = models.ForeignKey(Category)
-    stock = models.IntegerField()
-
-    def __str__(self):
-        return '[%06d]' % self.stock

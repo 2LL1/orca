@@ -51,8 +51,8 @@
   </div>
 
   <div class="bs col-md-12">
-    <ui-codemirror  ui-codemirror-opts="editor_options" rows="50" ng-model="record.update_code">
-    </ui-codemirror>
+    <div ui-codemirror="{ onLoad: codemirror_loaded }"  ui-codemirror-opts="editor_options" rows="50" ng-model="record.update_code" style="height: auto;">
+    </div>
   </div>
 
 </div>
