@@ -1,7 +1,7 @@
 <h1></h1>
 <div class="row">
   <div class="col-md-12">
-    <a href="#/universe/create" class="btn btn-primary btn-lg pull-right"><i class="fa fa-paw"> </i> New Ocean</a>
+    <a href="#/ocean-edit/create" class="btn btn-primary btn-lg pull-right"><i class="fa fa-paw"> </i> New Ocean</a>
   </div>
 </div>
 <div class="row hr-2">
@@ -13,12 +13,12 @@
         </tr>
       </thead>
       <tbody class="align-center">
-        <tr ng-repeat="row in universes.results">
+        <tr ng-repeat="row in data.results">
           <td>
             {[{row.id}]}
           </td>
           <td>
-            <a href="#/universe/{[{row.id}]}">
+            <a href="#/ocean/{[{row.id}]}">
               {[{row.name}]}
             </a>
           </td>

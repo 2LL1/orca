@@ -8,7 +8,7 @@ from pygments import highlight
 
 from rest_framework import serializers
 from madlee.serializers import UserSerializer
-from orca.models import BasicEntry, LogForEntry, Ocean, Alpha, AlphaItem, Universe, UniverseItem
+from orca.models import BasicEntry, LogForEntry, Ocean, Alpha, Universe
 
 class BasicEntrySerializer(serializers.ModelSerializer):
     owner = UserSerializer()
@@ -20,7 +20,7 @@ class LogForEntrySerializer(serializers.ModelSerializer):
 
 class OceanSerializer(BasicEntrySerializer):
     class Meta:
-        model = Alpha
+        model = Ocean
 
 class AlphaSerializer(BasicEntrySerializer):
     class Meta:

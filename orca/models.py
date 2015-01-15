@@ -98,7 +98,9 @@ class Alpha(BasicEntry):
         return vars['result']
 
     def reset(self, date1=None, date2=None):
-        assert
+        # TODO:
+        pass
+
 
     def update(self, date1, date2):
         alpha = self.generate(date1, date2)
@@ -126,37 +128,7 @@ class Alpha(BasicEntry):
             return cursor.fetchone()
 
 
-@python_2_unicode_compatible
-class AlphaItem(models.Model):
-    """Items in alpha. Please do not access it directly. Use the 
-    functions in class Alpha to manipulate the items in data frame"""
-    alpha = models.ForeignKey(Alpha)
-    date = models.IntegerField()
-    stock = models.IntegerField()
-    value = models.FloatField()
-
-    def __str__(self):
-        return '[%06d] %06d: %.4f' % (self.date, self.stock, self.value)
-
-    class Meta:
-        unique_together = ('alpha', 'date', 'stock')
-
 class Universe(BasicEntry):
     """A set of stock on specific date"""
     pass
-
-@python_2_unicode_compatible
-class UniverseItem(models.Model):
-    """Items in Universe. Please do not access it directly. Use the 
-    functions in class Universe to manipulate the items in data frame"""
-
-    universe = models.ForeignKey(Universe)
-    date = models.IntegerField()
-    stock = models.IntegerField()
-
-    def __str__(self):
-        return '[%06d] %06d' % (self.date, self.stock)
-
-    class Meta:
-        unique_together = ('universe', 'date', 'stock')
 

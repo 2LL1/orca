@@ -5,14 +5,14 @@ orcaApp.config(['$routeProvider', function($routeProvider) {
     when('/home', {templateUrl: 'home.html',   controller: 'HomeCtrl'}).
     when('/login', {templateUrl: 'login.html',   controller: 'LoginCtrl'}).
     when('/ocean', {templateUrl: 'ocean-list.html', controller: 'OceanListCtrl'}).
-    when('/ocean/:oceanID', {templateUrl: 'ocean.html', controller: 'OceanDetailCtrl'}).
+    when('/ocean-view/:oceanID', {templateUrl: 'ocean-view.html', controller: 'OceanDetailCtrl'}).
+    when('/ocean-edit/:oceanID', {templateUrl: 'ocean-edit.html', controller: 'OceanEditCtrl'}).
     when('/alpha', {templateUrl: 'alpha-list.html', controller: 'AlphaListCtrl'}).
-    when('/alpha-view/:alphaID', {templateUrl: 'alpha.html', controller: 'AlphaDetailCtrl'}).
+    when('/alpha-view/:alphaID', {templateUrl: 'alpha-view.html', controller: 'AlphaDetailCtrl'}).
     when('/alpha-edit/:alphaID', {templateUrl: 'alpha-edit.html', controller: 'AlphaEditCtrl'}).
     when('/universe', {templateUrl: 'universe-list.html', controller: 'UniverseListCtrl'}).
-    when('/universe/:univID', {templateUrl: 'universe.html', controller: 'UniverseDetailCtrl'}).
-    when('/category', {templateUrl: 'category-list.html', controller: 'CategoryListCtrl'}).
-    when('/category/:catID', {templateUrl: 'category.html', controller: 'CategoryDetailCtrl'}).
+    when('/universe-view/:univID', {templateUrl: 'universe-view.html', controller: 'UniverseViewCtrl'}).
+    when('/universe-edit/:univID', {templateUrl: 'universe-edit.html', controller: 'UniverseEditCtrl'}).
     
     when('/report', {templateUrl: 'report.html', controller: 'ReportCtrl'}).
 
@@ -69,7 +69,7 @@ orcaControllers.controller('LoginCtrl', ['$scope', '$http', function ($scope, $h
     var password = jQuery('#txt-password').val()
     var remember = jQuery('#chk_remember_me').attr("checked")
 
-    data = {email: username, password: password, keep_login: remember}
+    data = {username: username, password: password, keep_login: remember}
 
     $http.post('/madlee/login.json', data).success(function(data) {
       window.location = '#/home'
@@ -105,10 +105,6 @@ orcaControllers.controller('HomeCtrl', ['$scope', 'Alpha', 'Universe', 'Category
 {
   Madlee.login_first()
   Madlee.active_navbar_tab('home')
-
-  $scope.alphas = Alpha.query()
-  $scope.universe = Universe.query()
-  $scope.category = Category.query()
 
 
 }]);

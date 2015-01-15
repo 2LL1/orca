@@ -15,7 +15,6 @@ router.register(r'log', LogForEntryViewSet)
 router.register(r'ocean', OceanViewSet)
 router.register(r'alpha', AlphaViewSet)
 router.register(r'universe', UniverseViewSet)
-router.register(r'category', CategoryViewSet)
 
 urlpatterns = patterns('orca.views',
 	url(r'^orca/(.+)\.html$', 'render_html', name='render_html'),

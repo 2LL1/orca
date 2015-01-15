@@ -87,8 +87,6 @@ orcaControllers.controller('AlphaDetailCtrl', ['$scope', '$routeParams', 'Alpha'
 
     $scope.save = function() {
 
-      
-
       if (is_undefined($scope.alpha)) {
 
       }
@@ -124,16 +122,14 @@ orcaControllers.controller('AlphaEditCtrl', ['$scope', '$routeParams', '$http',
       "import pandas\n" +
       "import numpy\n" +
       "\n" +
-      "window = 5\n" +
+      "window = 4\n" +
       "\n" +
       "close = ocean.get_frame('SDAY.close', date1, date2, window)\n" +
-      "delta = close - pandas.rolling_mean(close, window)\n" +
+      "delta = close - pandas.rolling_mean(close, window+1)\n" +
       "\n" +
       "result = delta / close\n" +
       "result = result[window:]\n" +
       "\n"
-
-    
 
     if ($routeParams.alphaID === 'new') {
       $scope.record = {
@@ -149,14 +145,32 @@ orcaControllers.controller('AlphaEditCtrl', ['$scope', '$routeParams', '$http',
       }
     }
     else {
-      
+      $http.get('alpha/'+ $routeParams.alphaID+ '.json').success(function(data) {
+        $scope.record = data
+      })
     }
+
+    $scope.update_name = function() {
+      if ($scope.record.id) {
+        var data = {name: $scope.record.name};
+        return $http.post('/orca/alpha/'+$scope.record.id+'/set_name', data);
+      }
+    };
+
+    $scope.update_describe = function() {
+      if ($scope.record.id) {
+        var data = {describe: $scope.record.describe};
+        return $http.post('/orca/alpha/'+$scope.record.id+'/set_describe', data);
+      }
+    };
 
     $scope.save = function() {
       $routeParams.alphaID = 'HELLO'
 
       // $http.post('alpha/'+ $routeParams.alphaID+ '.json', {data: $scope.record})
     }
+
+
 
     $scope.codemirror_loaded = function(editor) {
 

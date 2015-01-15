@@ -63,11 +63,23 @@ orcaControllers.controller('OceanListCtrl', ['$scope', 'Ocean',
   
   jQuery('#div-filter').treeview({data: filters, levels: 3});
 
-  $scope.records = Ocean.query()
+  $scope.data = Ocean.query()
 
 }]);
 
 orcaControllers.controller('OceanDetailCtrl', ['$scope', '$routeParams', 'Ocean', 
+  function ($scope, $routeParams, Ocean) {
+    Madlee.login_first()
+    Madlee.active_navbar_tab('ocean')
+
+    $scope.data = Ocean.get({oceanID: $routeParams.oceanID}, function(record) {
+      
+    });
+
+}]);
+
+
+orcaControllers.controller('OceanEditCtrl', ['$scope', '$routeParams', 'Ocean', 
   function ($scope, $routeParams, Ocean) {
     Madlee.login_first()
     Madlee.active_navbar_tab('ocean')

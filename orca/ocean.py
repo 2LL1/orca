@@ -317,19 +317,15 @@ class OceanSqlite3(BasicOcean):
             v.to_pickle(filename)
         logger.info('%d cache(s) were saved in %s.', len(frames), timer)
 
-
 def load_cache(name):
     fullname = join_path(settings.ORCA_CACHE_PATH, name)
     return read_pickle(fullname)
-
 
 class BasicOceanD(OceanSqlite3):
     """Ocean with date only."""
     PRIMARY_KEY = ['date', 'stock', ]
     INDEXES = ['stock']
     SQL_GET_VALUE = SQL_GET_VALUE_D
-
-
 
 class MixinFromCSV(object):
     """Original data was saved in CSV file."""

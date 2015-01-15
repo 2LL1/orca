@@ -1,9 +1,9 @@
 <div class="row">
   <div class="bs col-md-10">
     <h1>
-      <a editable-text="record.name" onaftersave="update_name()">{[{record.name}]}</a>
+      <a editable-text="record.name">{[{record.name}]}</a>
     </h1>
-    <a href="#" editable-textarea="record.describe" onaftersave="update_describe()" e-rows="2" e-cols="80">
+    <a href="#" editable-textarea="record.describe" e-rows="2" e-cols="80">
       <pre>{[{ record.describe }]}</pre>
     </a>
     <p>
@@ -37,25 +37,7 @@
         <label class="sr-only">Update on</label>
         <div class="input-group">
           <div class="input-group-addon" title="Auto update time"><i class="fa fa-clock-o"></i></div>
-          <select class="form-control" ng-model="record.update_on">
-            <option value="-1">N/A</option>
-            <option value="0">00:00 AM</option>
-            <option value="100">01:00 AM</option>
-            <option value="200">02:00 AM</option>
-            <option value="300">03:00 AM</option>
-            <option value="400">04:00 AM</option>
-            <option value="500">05:00 AM</option>
-            <option value="600">06:00 AM</option>
-            <option value="700">07:00 AM</option>
-            <option value="800">08:00 AM</option>
-            <option value="1700">05:00 PM</option>
-            <option value="1800">06:00 PM</option>
-            <option value="1900">07:00 PM</option>
-            <option value="2000">08:00 PM</option>
-            <option value="2100">09:00 PM</option>
-            <option value="2200">10:00 PM</option>
-            <option value="2300">11:00 PM</option>
-          </select>
+          <input type="text" class="form-control" placeholder="Update Time" ng-model="record.update_on">
         </div>
       </div>
       <div class="form-group">
