@@ -96,8 +96,6 @@ orcaControllers.controller('AlphaDetailCtrl', ['$scope', '$routeParams', 'Alpha'
       }
     }
 
-    
-
     jQuery('#tab-alpha a').click(function (e) {
       e.preventDefault()
       jQuery(this).tab('show')
@@ -136,12 +134,11 @@ orcaControllers.controller('AlphaEditCtrl', ['$scope', '$routeParams', '$http',
         id: null,
         name: "New Alpha",
         describe: "Say something here.",
-        update_on: 'N/A',
+        update_on: -1,
         status: 'D',
         update_code: $scope.DEFAULT_CODE,
         author: Madlee.user,
         owner: Madlee.user
-        // timestamp0: moment().format('YYYY-MM-DD HH:mm:ss')
       }
     }
     else {
@@ -165,15 +162,22 @@ orcaControllers.controller('AlphaEditCtrl', ['$scope', '$routeParams', '$http',
     };
 
     $scope.save = function() {
-      $routeParams.alphaID = 'HELLO'
-
-      // $http.post('alpha/'+ $routeParams.alphaID+ '.json', {data: $scope.record})
+      var doc = $scope.editor.getDoc()
+      $scope.record.update_code = doc.getValue()
+      if ($scope.record.id === null) {
+        $http.post('/orca/alpha/new', $scope.record).success(function(data) {
+          window.location = '#/alpha-edit/' + data.id
+        });
+      }
+      else {
+        $http.post('/orca/alpha/'+$scope.record.id+'/save', $scope.record);
+      }
     }
 
 
 
     $scope.codemirror_loaded = function(editor) {
-
+      $scope.editor = editor
     }
 
     $scope.editor_options = {
