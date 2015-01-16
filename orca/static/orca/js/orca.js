@@ -50,11 +50,6 @@ orcaServices.factory('Universe', function($resource){
   });
 });
 
-orcaServices.factory('Category', function($resource){
-  return $resource('category/:categoryID.json', {}, {
-    query: {method:'GET', params:{categoryID:''}, isArray:false},
-  });
-});
 
 orcaControllers.controller('LoginCtrl', ['$scope', '$http', function ($scope, $http) {
   if (is_undefined(Madlee.user)) {
@@ -100,8 +95,8 @@ orcaControllers.filter('prettify', ['$sce', function($sce){
 }])
 
 
-orcaControllers.controller('HomeCtrl', ['$scope', 'Alpha', 'Universe', 'Category',
-  function ($scope, Alpha, Universe, Category) 
+orcaControllers.controller('HomeCtrl', ['$scope', '$http', 
+  function ($scope, $http) 
 {
   Madlee.login_first()
   Madlee.active_navbar_tab('home')

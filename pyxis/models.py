@@ -42,7 +42,7 @@ class JobLog(models.Model):
 	timestamp1 = models.DateTimeField(auto_now=True)
 	timestampZ = models.DateTimeField()
 
-	return_code = models.IntegerField(null=True, default=null)
+	return_code = models.IntegerField(null=True, default=None)
 
 	def __str__(self):
 		return self.name
