@@ -61,7 +61,7 @@ SQL_SELECT_DAYS = """SELECT DISTINCT date
     ORDER BY date
 """
 
-SQL_MIN_DATE = """SELECT MAX(date) 
+SQL_MIN_DATE = """SELECT MIN(date) 
     FROM %(table_name)s
     %(where)s
 """
@@ -88,7 +88,25 @@ SQL_SELECT_SHIFT_DATE = ["""SELECT DISTINCT date FROM %(table_name)s
     ORDER BY date
 """]
 
+SQL_GET_ALPHA = """SELECT date, stock, value 
+    FROM T_ALPHA
+    %(where)s 
+"""
 
+SQL_RESET_ALPHA = """DELETE FROM T_ALPHA
+    WHERE alpha_id = ?
+"""
+
+
+
+SQL_DELETE_ALPHA_ITEMS = """DELETE FROM T_ALPHA
+    WHERE alpha_id = ? AND ? <= date AND date <= ? 
+"""
+
+SQL_INSERT_ALPHA_ITEMS = """INSERT INTO T_ALPHA
+    (date, stock, value, alpha_id) 
+    VALUES (?, ?, ?, ?)
+"""
 
 
 class OceanManager(object):
@@ -103,7 +121,7 @@ class OceanManager(object):
         try:
             result = result[0](name, *result[1:])
             self.__pool[name] = result
-        except TypeError as e:
+        except TypeError as _:
             pass
 
         return result
@@ -121,11 +139,17 @@ def _build_sql_where(**args):
     if date1:
         where.append('date >= ?')
         parameters.append(date1)
+        del args['date1']
 
     date2 = args.get('date2', None)
     if date2:
         where.append('date < ?')
         parameters.append(date2)
+        del args['date2']
+
+    for k, v in args.iteritems():
+        where.append('%s = ?' % k)
+        parameters.append(v)
 
     if where:
         where = 'WHERE ' + ' AND '.join(where)
@@ -459,10 +483,65 @@ class OceanAlpha(OceanSqlite3):
     PRIMARY_KEY = ['alpha_id', 'date', 'stock', ]
     INDEXES = ['alpha_id stock']
     COLUMN_NAMES = ['value']
-    # SQL_GET_VALUE = SQL_GET_ALPHA
+    SQL_GET_VALUE = SQL_GET_ALPHA
 
-    def __init__(self):
+    def __init__(self, *args):
         super(OceanAlpha, self).__init__('ALPHA', OceanAlpha.COLUMN_NAMES)
+
+    def stack(self, id, cursor=None, **kwargs):
+        if 'alpha_id' not in kwargs:
+            kwargs['alpha_id'] = id
+        else:
+            assert id == 'value' or kwargs['alpha_id'] == id
+        return super(OceanAlpha, self).stack('value', cursor, **kwargs)
+
+    def frame(self, id, cursor=None, **kwargs):
+        kwargs['alpha_id'] = id
+        return super(OceanAlpha, self).frame('value', cursor, **kwargs)
+
+
+    def reset(self, id, cursor=None):
+        if cursor == None:
+            cursor = self.conn.cursor()
+        logger.info("Start Reset ALPHA-[%s]", id)
+        t1 = Timer()
+        cursor.execute(SQL_RESET_ALPHA, (id,))
+        rowcount = cursor.rowcount
+        self.conn.commit()
+        logger.info("Reset ALPHA-[%s] in %s. %d record(s) were deleted.", id, t1, rowcount)
+
+    def update(self, id, frame, cursor=None):
+        if cursor == None:
+            cursor = self.conn.cursor()
+        logger.info("Start Update ALPHA-[%s]", id)
+
+        days = frame.index
+        if len(days):
+            # Drop old values
+            min_date = min(days)
+            max_date = max(days)
+
+            t1, t_all = Timer(), Timer()
+            logger.info("Deleting records between [%s, %s]", min_date, max_date)
+            cursor.execute(SQL_DELETE_ALPHA_ITEMS, (id, min_date, max_date))
+            rowcount = cursor.rowcount
+            logger.info("Deteled %d record(s) in %s", rowcount, t1)
+            t1.reset()
+
+        frame = frame.stack().reset_index()
+        frame.columns = ['date', 'stock', 'value']
+        frame['alpha_id'] = id
+
+        data = [tuple(x) for x in frame.values]
+
+        logger.info("Prepared %d data in %s", len(frame), t1)
+        t1.reset()
+
+        cursor.executemany(SQL_INSERT_ALPHA_ITEMS, data)
+        self.conn.commit()
+        logger.info("Inserted %d rows in %s", len(frame), t1)
+        logger.info("Updated ALPHA-[%s] in %s", id, t_all)
+
 
 ocean_man['ALPHA'] = OceanAlpha, ''
 

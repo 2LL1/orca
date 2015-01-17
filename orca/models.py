@@ -8,6 +8,8 @@ from django.db import models, connection
 from django.contrib.auth.models import User
 from django.utils.encoding import python_2_unicode_compatible
 
+from orca.ocean import ocean_man
+
 
 logger = logging.getLogger('orca.models')
 
