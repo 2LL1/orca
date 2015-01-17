@@ -81,23 +81,9 @@ orcaControllers.controller('OceanEditCtrl', ['$scope', '$routeParams', '$http',
     Madlee.login_first()
     Madlee.active_navbar_tab('ocean')
 
-    $scope.DEFAULT_CODE = "# Define your code here.\n" +
-      "# This is an example.\n" +
-      "# [date1, date2) are a pair of date.\n" +
-      "# Save your output into variable result\n" +
-      "\n" +
-      "from orca import ocean\n" +
-      "import pandas\n" +
-      "import numpy\n" +
-      "\n" +
-      "window = 4\n" +
-      "\n" +
-      "close = ocean.get_frame('SDAY.close', date1, date2, window)\n" +
-      "delta = close - pandas.rolling_mean(close, window+1)\n" +
-      "\n" +
-      "result = delta / close\n" +
-      "result = result[window:]\n" +
-      "\n"
+    $scope.DEFAULT_CODE = "# Define your code here.\n"
+      + "# self is the ocean itself\n"
+      + "self.refresh('username/password@hosts')\n"
 
     if ($routeParams.oceanID === 'new') {
       $scope.record = {
