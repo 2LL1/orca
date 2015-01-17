@@ -434,8 +434,8 @@ class OceanKDay(BasicOceanD, MixinFromOracle):
 
     def uniform(self, row):
         row = list(row)
-        row[0] = int(row[0])
-        row[1] = row[1].year * 10000 + row[1].month*100 + row[1].day
+        row[0] = row[0].year * 10000 + row[0].month*100 + row[0].day
+        row[1] = int(row[1])
         return row
 
 ocean_man['SDAY'] = OceanKDay, SQL_SELECT_KDAY_STOCK_FROM_ORACLE
@@ -459,7 +459,7 @@ class OceanAlpha(OceanSqlite3):
     PRIMARY_KEY = ['alpha_id', 'date', 'stock', ]
     INDEXES = ['alpha_id stock']
     COLUMN_NAMES = ['value']
-    SQL_GET_VALUE = SQL_GET_ALPHA
+    # SQL_GET_VALUE = SQL_GET_ALPHA
 
     def __init__(self):
         super(OceanAlpha, self).__init__('ALPHA', OceanAlpha.COLUMN_NAMES)
@@ -472,7 +472,7 @@ class OceanUniverse(OceanSqlite3):
     PRIMARY_KEY = ['universe_id', 'date', 'stock', ]
     INDEXES = ['universe_id stock']
     COLUMN_NAMES = []
-    SQL_GET_VALUE = SQL_GET_UNIVERSE
+    # SQL_GET_VALUE = SQL_GET_UNIVERSE
 
     def __init__(self):
         super(OceanUniverse, self).__init__('UNIVERSE', OceanAlpha.COLUMN_NAMES)
