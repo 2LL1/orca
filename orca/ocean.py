@@ -17,6 +17,7 @@ import logging
 
 import numpy
 from pandas import read_sql, read_pickle
+from pandas.tools.pivot import pivot_table
 
 from django.conf import settings
 from orca.tools import *
@@ -38,7 +39,6 @@ SQL_GET_VALUE_D = """SELECT stock, date, %(value_name)s
     FROM %(table_name)s
     %(where)s
 """
-
 
 SQL_COUNT_STOCK = """SELECT COUNT(DISTINCT stock)
     FROM %(table_name)s
@@ -97,8 +97,6 @@ SQL_RESET_ALPHA = """DELETE FROM T_ALPHA
     WHERE alpha_id = ?
 """
 
-
-
 SQL_DELETE_ALPHA_ITEMS = """DELETE FROM T_ALPHA
     WHERE alpha_id = ? AND ? <= date AND date <= ? 
 """
@@ -106,6 +104,24 @@ SQL_DELETE_ALPHA_ITEMS = """DELETE FROM T_ALPHA
 SQL_INSERT_ALPHA_ITEMS = """INSERT INTO T_ALPHA
     (date, stock, value, alpha_id) 
     VALUES (?, ?, ?, ?)
+"""
+
+SQL_GET_UNIVERSE = """SELECT date, stock 
+    FROM T_UNIVERSE
+    %(where)s 
+"""
+
+SQL_RESET_UNIVERSE = """DELETE FROM T_UNIVERSE
+    WHERE universe_id = ?
+"""
+
+SQL_DELETE_UNIVERSE_ITEMS = """DELETE FROM T_UNIVERSE
+    WHERE universe_id=? AND date>=? AND date<=? 
+"""
+
+SQL_INSERT_UNIVERSE_ITEMS = """INSERT INTO T_UNIVERSE
+    (date, stock, universe_id) 
+    VALUES (?, ?, ?)
 """
 
 
@@ -518,8 +534,8 @@ class OceanAlpha(OceanSqlite3):
         days = frame.index
         if len(days):
             # Drop old values
-            min_date = min(days)
-            max_date = max(days)
+            min_date = int(min(days))
+            max_date = int(max(days))
 
             t1, t_all = Timer(), Timer()
             logger.info("Deleting records between [%s, %s]", min_date, max_date)
@@ -551,10 +567,70 @@ class OceanUniverse(OceanSqlite3):
     PRIMARY_KEY = ['universe_id', 'date', 'stock', ]
     INDEXES = ['universe_id stock']
     COLUMN_NAMES = []
-    # SQL_GET_VALUE = SQL_GET_UNIVERSE
+    SQL_GET_VALUE = SQL_GET_UNIVERSE
 
-    def __init__(self):
-        super(OceanUniverse, self).__init__('UNIVERSE', OceanAlpha.COLUMN_NAMES)
+    def __init__(self, *args):
+        super(OceanUniverse, self).__init__('UNIVERSE', OceanUniverse.COLUMN_NAMES)
+
+    def stack(self, id, cursor=None, **kwargs):
+        kwargs['universe_id'] = id
+        return super(OceanUniverse, self).stack('', cursor, **kwargs)
+
+    def frame(self, id, cursor=None, **kwargs):
+        stacks = self.stack(id, cursor, **kwargs)
+
+        logger.debug('Start Pivot stacks')
+        t1 = Timer()
+        stacks['value'] = True
+        result = pivot_table(stacks, 'value', 'date', 'stock', fill_value=False)
+        result.columns = numpy.char.mod('%06d', result.columns)
+        logger.debug('Finished pivoting in %s', t1)
+        return result
+
+    def reset(self, id, cursor=None):
+        if cursor == None:
+            cursor = self.conn.cursor()
+        logger.info("Start Reset UNIVERSE-[%s]", id)
+        t1 = Timer()
+        cursor.execute(SQL_RESET_UNIVERSE, (id,))
+        rowcount = cursor.rowcount
+        self.conn.commit()
+        logger.info("Reset UNIVERSE-[%s] in %s. %d record(s) were deleted.", id, t1, rowcount)
+
+    def update(self, univ_id, frame, cursor=None):
+        if cursor == None:
+            cursor = self.conn.cursor()
+        logger.info("Start Update UNIVERSE-[%s]", univ_id)
+
+        days = frame.index
+        if len(days):
+            # Drop old values
+            min_date = int(min(days))
+            max_date = int(max(days))
+
+            t1, t_all = Timer(), Timer()
+            logger.info("Deleting records between [%s, %s]", min_date, max_date)
+
+            cursor.execute(SQL_DELETE_UNIVERSE_ITEMS, (univ_id, min_date, max_date))
+            rowcount = cursor.rowcount
+            logger.info("Deteled %d record(s) in %s", rowcount, t1)
+            t1.reset()
+
+        frame = frame.stack().reset_index()
+        frame.columns = ['date', 'stock', 'value']
+        frame = frame[frame['value']] # Keep true value only.
+        del frame['value']
+        frame['universe_id'] = univ_id
+
+        data = [tuple(x) for x in frame.values]
+
+        logger.info("Prepared %d data in %s", len(frame), t1)
+        t1.reset()
+
+        cursor.executemany(SQL_INSERT_UNIVERSE_ITEMS, data)
+        self.conn.commit()
+        logger.info("Inserted %d rows in %s", len(frame), t1)
+        logger.info("Updated UNIVERSE-[%s] in %s", id, t_all)
 
 ocean_man['UNIVERSE'] = OceanUniverse, ''
 
