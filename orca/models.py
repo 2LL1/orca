@@ -87,48 +87,7 @@ class Ocean(BasicEntry):
 
 class Alpha(BasicEntry):
     """Alpha. You know what it is."""
-
-    ITEM_TABLE_NAME = 'orca_alphaitem'
-    
-    def generate(self, date1, date2, code=None):
-        """Generate alpha between [date1, date2)"""
-        if not code:
-            code = self.update_code
-
-        vars = {'date1': date1, 'date2': date2}
-        exec(code, {}, vars)
-        return vars['result']
-
-    def reset(self, date1=None, date2=None):
-        # TODO:
-        pass
-
-
-    def update(self, date1, date2):
-        alpha = self.generate(date1, date2)
-        alpha = alpha[alpha['date'] >= date1 and alpha['date'] < date2]
-        alpha = alpha.stack().reset_index()
-        alpha.columns = ['date', 'stock', 'value']
-
-        alpha = alpha[pandas.notnan(alpha['value'])]
-        alpha['alpha_id'] = self.id
-        alpha.to_sql(connection, connection, if_exists='append', index=False)
-
-    def frame(self, date1=None, date2=None):
-        assert self.id
-
-    def max_date(self):
-        sql = SQL_SELECT_MAX_DATE % {'table_name': self.ITEM_TABLE_NAME, 'node_name': 'alpha'}
-        cursor = connection.cursor()
-        if cursor.execute(sql, [self.id]):
-            return cursor.fetchone()
-
-    def min_date(self):
-        sql = SQL_SELECT_MIN_DATE % {'table_name': self.ITEM_TABLE_NAME, 'node_name': 'alpha'}
-        cursor = connection.cursor()
-        if cursor.execute(sql, [self.id]):
-            return cursor.fetchone()
-
+    pass
 
 class Universe(BasicEntry):
     """A set of stock on specific date"""

@@ -12,6 +12,7 @@ from rest_framework.decorators import detail_route, list_route
 
 
 from orca.serializers import *
+from orca.models import STATUS_CHOICES, User
 
 class OrcaViewSet(viewsets.ReadOnlyModelViewSet):
 
@@ -106,6 +107,13 @@ class OrcaViewSet(viewsets.ReadOnlyModelViewSet):
         self._save_log(record, request.user, "Created the record")
         return Response({'status': 'Record created.', 'id': record.id})
 
+    @list_route(methods=['get'])
+    def filter(self, request):
+        status = dict(STATUS_CHOICES)
+        users = User.objects.filter(is_active=True)
+        users = UserSerializer(users, many=True).data
+        return Response({'status': status, 'users': users})
+
 class LogForEntryViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = LogForEntrySerializer
     queryset = LogForEntry.objects.all()
@@ -116,7 +124,7 @@ class OceanViewSet(OrcaViewSet):
     queryset = Ocean.objects.all()
 
     @list_route(methods=['post'])
-    def new(self, request, pk=None):
+    def new(self, request):
         return self._new(request, Ocean())
 
 class AlphaViewSet(OrcaViewSet):
@@ -124,7 +132,7 @@ class AlphaViewSet(OrcaViewSet):
     queryset = Alpha.objects.all()
 
     @list_route(methods=['post'])
-    def new(self, request, pk=None):
+    def new(self, request):
         return self._new(request, Alpha())
 
 class UniverseViewSet(OrcaViewSet):
@@ -132,7 +140,7 @@ class UniverseViewSet(OrcaViewSet):
     queryset = Universe.objects.all()
 
     @list_route(methods=['post'])
-    def new(self, request, pk=None):
+    def new(self, request):
         return self._new(request, Universe())
 
    
