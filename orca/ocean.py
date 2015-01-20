@@ -634,3 +634,9 @@ class OceanUniverse(OceanSqlite3):
 
 ocean_man['UNIVERSE'] = OceanUniverse, ''
 
+class BasicOceanT(OceanSqlite3):
+    """Ocean with date only."""
+    PRIMARY_KEY = ['col_idx', 'time', 'date', 'stock', ]
+    INDEXES = ['col_idx', 'time', 'stock']
+    # SQL_GET_VALUE = SQL_GET_VALUE_T
+

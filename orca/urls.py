@@ -8,18 +8,28 @@ from django.contrib import admin
 from rest_framework.routers import DefaultRouter
 from madlee import urls as madlee_urls
 from orca.views import *
+from pyxis.views import *
 
 
-router = DefaultRouter(trailing_slash=False)
-router.register(r'log', LogForEntryViewSet)
-router.register(r'ocean', OceanViewSet)
-router.register(r'alpha', AlphaViewSet)
-router.register(r'universe', UniverseViewSet)
+router_orca = DefaultRouter(trailing_slash=False)
+router_orca.register(r'log', LogForEntryViewSet)
+router_orca.register(r'ocean', OceanViewSet)
+router_orca.register(r'alpha', AlphaViewSet)
+router_orca.register(r'universe', UniverseViewSet)
 
-urlpatterns = patterns('orca.views',
-	url(r'^orca/(.+)\.html$', 'render_html', name='render_html'),
-	url(r'^orca/(.+)\.form$', 'render_html', {'basic_path': 'orca/%s.form'}, name='render_form'),
-	url(r'^orca/', include(router.urls)),
+router_pyxis = DefaultRouter(trailing_slash=False)
+router_pyxis.register(r'account', AccountViewSet)
+router_pyxis.register(r'command', CommandViewSet)
+router_pyxis.register(r'joblog', JobLogViewSet)
+
+
+urlpatterns = patterns('',
+	url(r'^orca/(.+)\.html$', 'orca.views.render_html'),
+	url(r'^orca/(.+)\.form$', 'orca.views.render_html', {'basic_path': 'orca/%s.form'}),
+	url(r'^orca/', include(router_orca.urls)),
+	url(r'^pyxis/(.+)\.html$', 'pyxis.views.render_html'),
+	url(r'^pyxis/(.+)\.form$', 'pyxis.views.render_html', {'basic_path': 'pyxis/%s.form'}),
+	url(r'^pyxis/', include(router_pyxis.urls)),
 	url(r'^madlee/',  include(madlee_urls, namespace='madlee')),
     url(r'^admin/', include(admin.site.urls)),
 )
