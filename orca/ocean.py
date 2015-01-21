@@ -125,7 +125,7 @@ SQL_INSERT_UNIVERSE_ITEMS = """INSERT INTO T_UNIVERSE
 """
 
 SQL_CREATE_OCEAN_MINUTE = """CREATE TABLE IF NOT EXISTS T_%(name)s ( 
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id INTEGER PRIMARY KEY,
     time INTEGER,
     date INTEGER,
     stock INTEGER,
@@ -137,11 +137,10 @@ CREATE TABLE IF NOT EXISTS T_%(field)s (
 )""".split(';')
 
 
-SQL_INSERT_OCEAN_MINUTE = """INSERT INTO T_%(name)s
-    (time, date, stock) VALUES (?, ?, ?);
-SELECT id 
-    FROM T_%(name)s
-    WHERE time=? AND date=? AND stock=?;
+SQL_INSERT_OCEAN_MINUTE = """SELECT MAX(id)+1
+    FROM T_%(name)s;
+INSERT INTO T_%(name)s
+    (id, time, date, stock) VALUES (?, ?, ?, ?);
 INSERT INTO T_%(field)s
     (id, value) VALUES (?, ?);
 """.split(';')
@@ -682,22 +681,26 @@ class OceanKMinute(OceanSqlite3, MixinFromCSV):
         del cursor
 
     def push_rows(self, rows, cursor=None):
-        # TODO: 
         if cursor == None:
             cursor = self.conn.cursor()
 
         var = {
             'name': self.name
         }
-        data = [i[:3] for i in rows]
         sql = SQL_INSERT_OCEAN_MINUTE[0] % var
+        logger.debug('Execute SQL %s', sql)
+        cursor.execute(sql)
+        id0 = cursor.fetchone()[0]
+        if id0 == None:
+            id0 = 1
+
+
+        data = [(id0+i, row[0], row[1], row[2]) for i, row in enumerate(rows)]
+        sql = SQL_INSERT_OCEAN_MINUTE[1] % var
         logger.debug('Execute SQL %s', sql)
         cursor.executemany(sql, data)
 
-        sql = SQL_INSERT_OCEAN_MINUTE[1] % var
-        logger.debug('Execute SQL %s', sql)
-        id0 = cursor.execute(sql, data[0]).fetchone()[0]
-
+        
         for i, field in enumerate(self.fields):
             var['field'] = field
             data = [(j+id0, row[3+i]) for j, row in enumerate(rows)]
@@ -705,17 +708,6 @@ class OceanKMinute(OceanSqlite3, MixinFromCSV):
             logger.debug('Execute SQL %s', sql)
             cursor.executemany(sql, data)
 
-
-        """
-        vars = {
-            'table_name': self.__table, 
-            'columns': ','.join(self.PRIMARY_KEY + self.fields), 
-            'questions': ','.join('?'*(len(self.fields)+len(self.PRIMARY_KEY)))
-        }
-        sql = SQL_INSERT_OCEAN_ST % vars
-        logger.debug('Execute SQL %s', sql)
-        cursor.executemany(sql, rows)
-        """
 
     def uniform(self, row, titles):
         if self.__filter(row[0]):
