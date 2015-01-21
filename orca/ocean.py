@@ -24,14 +24,14 @@ from orca.tools import *
 
 logger = logging.getLogger('orca.ocean')
 
-SQL_CREATE_OCEAN = """CREATE TABLE IF NOT EXISTS T_%(name)s ( 
+SQL_CREATE_OCEAN_ST = """CREATE TABLE IF NOT EXISTS T_%(name)s ( 
     %(columns)s, 
     PRIMARY KEY (%(primary_keys)s)
 );
 CREATE INDEX IF NOT EXISTS I_%(name)s_%(fields_name)s ON T_%(name)s (%(fields)s);
 """.split(';')
 
-SQL_INSERT_OCEAN = """INSERT INTO %(table_name)s
+SQL_INSERT_OCEAN_ST = """INSERT INTO %(table_name)s
     (%(columns)s) VALUES (%(questions)s)
 """
 
@@ -124,6 +124,27 @@ SQL_INSERT_UNIVERSE_ITEMS = """INSERT INTO T_UNIVERSE
     VALUES (?, ?, ?)
 """
 
+SQL_CREATE_OCEAN_MINUTE = """CREATE TABLE IF NOT EXISTS T_%(name)s ( 
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    time INTEGER,
+    date INTEGER,
+    stock INTEGER,
+    CONSTRAINT unique_tds UNIQUE (time, date, stock)
+);
+CREATE TABLE IF NOT EXISTS T_%(field)s (
+    id INTEGER PRIMARY KEY REFERENCES T_%(name)s (id),
+    value FLOAT
+)""".split(';')
+
+
+SQL_INSERT_OCEAN_MINUTE = """INSERT INTO T_%(name)s
+    (time, date, stock) VALUES (?, ?, ?);
+SELECT id 
+    FROM T_%(name)s
+    WHERE time=? AND date=? AND stock=?;
+INSERT INTO T_%(field)s
+    (id, value) VALUES (?, ?);
+""".split(';')
 
 class OceanManager(object):
     def __init__(self):
@@ -222,26 +243,6 @@ class OceanSqlite3(BasicOcean):
 
         return cursor
 
-    def create(self, name):
-        """Create the database"""
-        cursor = self.conn.cursor()
-
-        column_names = self.PRIMARY_KEY + self.fields
-        column_types = ["INTEGER"]*len(self.PRIMARY_KEY) + ["FLOAT"] * len(self.fields)
-        columns = ','.join(['%s %s' % (i, j) for i, j in zip(column_names, column_types)])
-        sql = SQL_CREATE_OCEAN[0] % {'name': name, 'columns': columns, 'primary_keys': ','.join(self.PRIMARY_KEY)}
-        logger.debug('Execute SQL %s', sql)
-        cursor.execute(sql)
-
-        for fields in self.INDEXES:
-            fields = fields.split()
-            sql = SQL_CREATE_OCEAN[1] % {'name': name, 'fields': ', '.join(fields), 'fields_name': '_'.join(fields)}
-            logger.debug('Execute SQL %s', sql)
-            cursor.execute(sql)
-
-        self.commit()
-        del cursor
-
     def _count_by_sql(self, sql, cursor=None, **kwargs):
         where, params = _build_sql_where(**kwargs)
         sql %= {'table_name':self.__table, 'where': where}
@@ -255,10 +256,8 @@ class OceanSqlite3(BasicOcean):
         else:
             return 0
 
-    
     def min_date(self, cursor=None, **kwargs):
         return self._count_by_sql(SQL_MIN_DATE, cursor, **kwargs)
-
 
     def max_date(self, cursor=None, **kwargs):
         return self._count_by_sql(SQL_MAX_DATE, cursor, **kwargs)
@@ -303,6 +302,55 @@ class OceanSqlite3(BasicOcean):
         logger.debug('Loaded %d rows in %s', len(result), t1)
         return result['date']
 
+    def save_cache(self, fields, cursor=None, **kwargs):
+        logger.info('Loading data from ocean %s to create cache.', self.name)
+        timer = Timer()
+
+        frames = self.frames(fields, cursor, **kwargs)
+        output = kwargs.get('output', self.name)
+        for k, v in frames.iteritems():
+            logger.info('Saving cache %s.%s', output, k)
+            filename = join_path(settings.ORCA_CACHE_PATH, output+'.'+k)
+            v.to_pickle(filename)
+        logger.info('%d cache(s) were saved in %s.', len(frames), timer)
+
+def load_cache(name):
+    fullname = join_path(settings.ORCA_CACHE_PATH, name)
+    return read_pickle(fullname)
+
+class OceanWithSingleTableOnly(OceanSqlite3):
+    def create(self, name):
+        """Create the database"""
+        cursor = self.conn.cursor()
+
+        column_names = self.PRIMARY_KEY + self.fields
+        column_types = ["INTEGER"]*len(self.PRIMARY_KEY) + ["FLOAT"] * len(self.fields)
+        columns = ','.join(['%s %s' % (i, j) for i, j in zip(column_names, column_types)])
+        sql = SQL_CREATE_OCEAN_ST[0] % {'name': name, 'columns': columns, 'primary_keys': ','.join(self.PRIMARY_KEY)}
+        logger.debug('Execute SQL %s', sql)
+        cursor.execute(sql)
+
+        for fields in self.INDEXES:
+            fields = fields.split()
+            sql = SQL_CREATE_OCEAN_ST[1] % {'name': name, 'fields': ', '.join(fields), 'fields_name': '_'.join(fields)}
+            logger.debug('Execute SQL %s', sql)
+            cursor.execute(sql)
+
+        self.commit()
+        del cursor
+
+    def push_rows(self, rows, cursor=None):
+        if cursor == None:
+            cursor = self.conn.cursor()
+        vars = {
+            'table_name': self.__table, 
+            'columns': ','.join(self.PRIMARY_KEY + self.fields), 
+            'questions': ','.join('?'*(len(self.fields)+len(self.PRIMARY_KEY)))
+        }
+        sql = SQL_INSERT_OCEAN_ST % vars
+        logger.debug('Execute SQL %s', sql)
+        cursor.executemany(sql, rows)
+
     def stack(self, names, cursor=None, **kwargs):
         try:
             names = names.split()
@@ -333,39 +381,6 @@ class OceanSqlite3(BasicOcean):
         logger.debug('Finished pivoting in %s', t1)
         return result
 
-    def push_rows(self, rows, cursor=None):
-        if cursor == None:
-            cursor = self.conn.cursor()
-        vars = {
-            'table_name': self.__table, 
-            'columns': ','.join(self.PRIMARY_KEY + self.fields), 
-            'questions': ','.join('?'*(len(self.fields)+len(self.PRIMARY_KEY)))
-        }
-        sql = SQL_INSERT_OCEAN % vars
-        logger.debug('Execute SQL %s', sql)
-        cursor.executemany(sql, rows)
-
-    def save_cache(self, fields, cursor=None, **kwargs):
-        logger.info('Loading data from ocean %s to create cache.', self.name)
-        timer = Timer()
-
-        frames = self.frames(fields, cursor, **kwargs)
-        output = kwargs.get('output', self.name)
-        for k, v in frames.iteritems():
-            logger.info('Saving cache %s.%s', output, k)
-            filename = join_path(settings.ORCA_CACHE_PATH, output+'.'+k)
-            v.to_pickle(filename)
-        logger.info('%d cache(s) were saved in %s.', len(frames), timer)
-
-def load_cache(name):
-    fullname = join_path(settings.ORCA_CACHE_PATH, name)
-    return read_pickle(fullname)
-
-class BasicOceanD(OceanSqlite3):
-    """Ocean with date only."""
-    PRIMARY_KEY = ['date', 'stock', ]
-    INDEXES = ['stock']
-    SQL_GET_VALUE = SQL_GET_VALUE_D
 
 class MixinFromCSV(object):
     """Original data was saved in CSV file."""
@@ -465,11 +480,14 @@ class MixinFromOracle(object):
             
         logger.info('Finished of refreshing database %s', self.name)
 
-class OceanKDay(BasicOceanD, MixinFromOracle):
+class OceanKDay(OceanWithSingleTableOnly, MixinFromOracle):
+    PRIMARY_KEY = ['date', 'stock', ]
+    INDEXES = ['stock']
+    SQL_GET_VALUE = SQL_GET_VALUE_D
     COLUMN_NAMES = "open high low close volume value deals".split()
 
     def __init__(self, name, sql):
-        BasicOceanD.__init__(self, name, OceanKDay.COLUMN_NAMES)
+        OceanWithSingleTableOnly.__init__(self, name, OceanKDay.COLUMN_NAMES)
         MixinFromOracle.__init__(self, sql)
 
     def uniform(self, row):
@@ -494,7 +512,7 @@ def get_frame(hints, date1, date2, shift=0):
 def get_trading_days(date1, date2, window=None):
     return ocean_man['SDAY'].get_dates(date1=date1, date2=date2)
 
-class OceanAlpha(OceanSqlite3):
+class OceanAlpha(OceanWithSingleTableOnly):
     """Ocean with date only."""
     PRIMARY_KEY = ['alpha_id', 'date', 'stock', ]
     INDEXES = ['alpha_id stock']
@@ -558,11 +576,12 @@ class OceanAlpha(OceanSqlite3):
         logger.info("Inserted %d rows in %s", len(frame), t1)
         logger.info("Updated ALPHA-[%s] in %s", id, t_all)
 
-
 ocean_man['ALPHA'] = OceanAlpha, ''
 
 
-class OceanUniverse(OceanSqlite3):
+
+
+class OceanUniverse(OceanWithSingleTableOnly):
     """Ocean with date only."""
     PRIMARY_KEY = ['universe_id', 'date', 'stock', ]
     INDEXES = ['universe_id stock']
@@ -634,9 +653,121 @@ class OceanUniverse(OceanSqlite3):
 
 ocean_man['UNIVERSE'] = OceanUniverse, ''
 
-class BasicOceanT(OceanSqlite3):
-    """Ocean with date only."""
-    PRIMARY_KEY = ['col_idx', 'time', 'date', 'stock', ]
-    INDEXES = ['col_idx', 'time', 'stock']
-    # SQL_GET_VALUE = SQL_GET_VALUE_T
+
+class OceanKMinute(OceanSqlite3, MixinFromCSV):
+    """Ocean with minute label"""
+
+    COLUMN_NAMES = "price,open,close,high,low,vol,amount,cjbs,yclose,syl1,syl2,buy1,buy2,buy3,buy4,buy5,sale1,sale2,sale3,sale4,sale5,bc1,bc2,bc3,bc4,bc5,sc1,sc2,sc3,sc4,sc5,wb,lb,zmm,buy_vol,buy_amount,sale_vol,sale_amount,w_buy,w_sale".split(',')
+
+    def __init__(self, name, filter):
+        OceanSqlite3.__init__(self, name, OceanKMinute.COLUMN_NAMES)
+        self.__filter = filter
+        
+    def create(self, name):
+        """Create the database"""
+        cursor = self.conn.cursor()
+        var = {'name': name}
+        
+        sql = SQL_CREATE_OCEAN_MINUTE[0] % var
+        logger.debug('Execute SQL %s', sql)
+        cursor.execute(sql)
+
+        for i in self.fields:
+            var['field'] = i
+            sql = SQL_CREATE_OCEAN_MINUTE[1] % var
+            logger.debug('Execute SQL %s', sql)
+            cursor.execute(sql)
+
+        self.commit()
+        del cursor
+
+    def push_rows(self, rows, cursor=None):
+        # TODO: 
+        if cursor == None:
+            cursor = self.conn.cursor()
+
+        var = {
+            'name': self.name
+        }
+        data = [i[:3] for i in rows]
+        sql = SQL_INSERT_OCEAN_MINUTE[0] % var
+        logger.debug('Execute SQL %s', sql)
+        cursor.executemany(sql, data)
+
+        sql = SQL_INSERT_OCEAN_MINUTE[1] % var
+        logger.debug('Execute SQL %s', sql)
+        id0 = cursor.execute(sql, data[0]).fetchone()[0]
+
+        for i, field in enumerate(self.fields):
+            var['field'] = field
+            data = [(j+id0, row[3+i]) for j, row in enumerate(rows)]
+            sql = SQL_INSERT_OCEAN_MINUTE[2] % var
+            logger.debug('Execute SQL %s', sql)
+            cursor.executemany(sql, data)
+
+
+        """
+        vars = {
+            'table_name': self.__table, 
+            'columns': ','.join(self.PRIMARY_KEY + self.fields), 
+            'questions': ','.join('?'*(len(self.fields)+len(self.PRIMARY_KEY)))
+        }
+        sql = SQL_INSERT_OCEAN_ST % vars
+        logger.debug('Execute SQL %s', sql)
+        cursor.executemany(sql, rows)
+        """
+
+    def uniform(self, row, titles):
+        if self.__filter(row[0]):
+            stock = int(row[0][2:])
+            stamp = DateTime.strptime(row[2], '%Y-%m-%d %H:%M:%S')
+            date = stamp.year*10000 + stamp.month*100 + stamp.day
+            time = stamp.hour * 100 + stamp.minute
+            return [time, date, stock] + [float(i) for i in row[3:]]
+        else:
+            return None
+
+    def stack(self, time, names, cursor=None, **kwargs):
+        # TODO: 
+        try:
+            names = names.split()
+        except AttributeError:
+            pass
+
+        for name in names:
+            if name not in self.fields:
+                raise KeyError('%s is not a field.', name)
+
+        where, params = _build_sql_where(**kwargs)
+        sql = self.SQL_GET_VALUE % {'value_name': ','.join(names), 'table_name':self.__table, 'where': where}
+        logger.debug('Start load SQL Data %s', sql)
+        t1 = Timer()
+        result = read_sql(sql, self.conn, params=params)
+        logger.debug('Loaded %d rows in %s', len(result), t1)
+        return result
+
+    def frame(self, time, name, cursor=None, **kwargs):
+        # TODO: 
+        """return a value frame between [day1, day2). 
+            name: The column name of the value"""
+
+        stacks = self.stack(name, cursor, **kwargs)
+        logger.debug('Start Pivot stacks')
+        t1 = Timer()
+        result = stacks.pivot('date', 'stock', name)
+        result.columns = numpy.char.mod('%06d', result.columns)
+        logger.debug('Finished pivoting in %s', t1)
+        return result
+
+is_stock = lambda token: token[:4] in {'SH60', 'SZ30', 'SZ00'}
+is_index = lambda token: not is_stock(token)
+
+ocean_man['S30'] = OceanKMinute, is_stock
+ocean_man['I30'] = OceanKMinute, is_index
+
+ocean_man['S05'] = OceanKMinute, is_stock
+ocean_man['I05'] = OceanKMinute, is_index
+
+ocean_man['S01'] = OceanKMinute, is_stock
+ocean_man['I01'] = OceanKMinute, is_index
 
