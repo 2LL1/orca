@@ -16,7 +16,6 @@ orcaApp.config(['$routeProvider', function($routeProvider) {
     
     when('/report', {templateUrl: 'report.html', controller: 'ReportCtrl'}).
 
-    when('/admin', {templateUrl: 'admin.html', controller: 'AdminCtrl'}).
     otherwise({redirectTo: '/home'});
 }]);
 
