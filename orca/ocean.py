@@ -518,8 +518,8 @@ class OceanAlpha(OceanWithSingleTableOnly):
     COLUMN_NAMES = ['value']
     SQL_GET_VALUE = SQL_GET_ALPHA
 
-    def __init__(self, *args):
-        super(OceanAlpha, self).__init__('ALPHA', OceanAlpha.COLUMN_NAMES)
+    def __init__(self, name, *args):
+        super(OceanAlpha, self).__init__(name, OceanAlpha.COLUMN_NAMES)
 
     def stack(self, id, cursor=None, **kwargs):
         if 'alpha_id' not in kwargs:
@@ -578,8 +578,6 @@ class OceanAlpha(OceanWithSingleTableOnly):
 ocean_man['ALPHA'] = OceanAlpha, ''
 
 
-
-
 class OceanUniverse(OceanWithSingleTableOnly):
     """Ocean with date only."""
     PRIMARY_KEY = ['universe_id', 'date', 'stock', ]
@@ -587,8 +585,8 @@ class OceanUniverse(OceanWithSingleTableOnly):
     COLUMN_NAMES = []
     SQL_GET_VALUE = SQL_GET_UNIVERSE
 
-    def __init__(self, *args):
-        super(OceanUniverse, self).__init__('UNIVERSE', OceanUniverse.COLUMN_NAMES)
+    def __init__(self, name, *args):
+        super(OceanUniverse, self).__init__(name, OceanUniverse.COLUMN_NAMES)
 
     def stack(self, id, cursor=None, **kwargs):
         kwargs['universe_id'] = id
