@@ -13,7 +13,7 @@
         </tr>
       </thead>
       <tbody class="align-center">
-        <tr ng-repeat="row in alphas.results">
+        <tr ng-repeat="row in records.results">
           <td>
             {[{row.id}]}
           </td>
@@ -34,14 +34,32 @@
         </tr>
       </tbody>
     </table>
+
+    <pagination boundary-links="true" total-items="records.count" ng-model="current" items-per-page="page_size" previous-text="&lsaquo;" next-text="&rsaquo;" first-text="&laquo;" last-text="&raquo;" ng-change="load_page()">
+    </pagination>
+  
   </div>
+  
   <div class="bs col-md-4 col-lg-3">
     <h1></h1>
-    <div>
+    <form class="form-inline">
+      <div class="form-group">
+        <div class="input-group">
+          <input type="text" class="form-control" placeholder="Search...">
+          <span class="input-group-btn">
+            <button class="btn btn-default" type="button"><i class="fa fa-search"></i></button>
+          </span>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="input-group">
+          <a class="btn btn-default pull-right"><i class="fa fa-power-off"> </i> Reset All Filters</a>
+        </div>
+      </div>
+    </form>
 
+    <div id="div-filter"> 
     </div>
-    <div id="div-filter"> </div>
-    <a class="btn btn-default pull-right"><i class="fa fa-power-off"> </i> Reset All Filters</a>
   </div>
 </div>
 

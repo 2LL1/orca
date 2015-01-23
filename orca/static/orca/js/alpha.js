@@ -2,45 +2,25 @@ orcaControllers.controller('AlphaListCtrl', ['$scope', '$http', function ($scope
   Madlee.login_first()
   Madlee.active_navbar_tab('alpha')
 
-  $http.get('alpha.json').success(function(data){
-    $scope.alphas = data
-  })
+  $scope.page_size=50
+  $scope.records = {count: 0}
+  $scope.current = 1
+
+  $scope.load_page = function() {
+    $http.get('alpha.json').success(function(data){
+      $scope.records = data
+    })
+  }
+  
   $http.get('alpha/filter').success(function(data){
-    var filters = {text: 'Filters', icon: 'fa fa-filter', nodes: []}
-    var status = {text: 'Status', icon: "fa fa-bars", nodes: [
-        {
-          text: "Developing",
-          icon: "fa fa-steam"
-        },
-        {
-          text: "Testing",
-          icon: "fa fa-joomla"
-        },
-        {
-          text: "Published",
-          icon: "fa fa-rocket"
-        },
-        {
-          text: "Deprecated",
-          icon: "fa fa-recycle"
-        }
-      ]}
-    var users =  {text: "User", icon: "fa fa-users", nodes: []}
-
-    for (var i = 0; i < data.users.length; ++i) {
-      users.nodes.push({text: data.users[i].username, icon: "fa fa-user"})
-    }
-
-    filters.nodes.push(status)
-    filters.nodes.push(users)
-
-    jQuery('#div-filter').treeview({data: [filters], levels: 3});
+    load_filter(data)
   })
-
+  $scope.load_page();
+  
 }]);
 
-orcaControllers.controller('AlphaDetailCtrl', ['$scope', '$routeParams', 'Alpha', 
-  function ($scope, $routeParams, Alpha) {
+orcaControllers.controller('AlphaDetailCtrl', ['$scope', '$routeParams', '$http', 
+  function ($scope, $routeParams, $http) {
     Madlee.login_first()
     Madlee.active_navbar_tab('alpha')
 
@@ -147,8 +127,6 @@ orcaControllers.controller('AlphaEditCtrl', ['$scope', '$routeParams', '$http',
         $http.post('/orca/alpha/'+$scope.record.id+'/save', $scope.record);
       }
     }
-
-
 
     $scope.codemirror_loaded = function(editor) {
       $scope.editor = editor
