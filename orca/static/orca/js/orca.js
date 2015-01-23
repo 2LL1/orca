@@ -1,4 +1,4 @@
-var orcaApp = angular.module('orcaApp', ['ngRoute', 'xeditable', 'ui.codemirror', 'orcaControllers', 'orcaServices'])
+var orcaApp = angular.module('orcaApp', ['ngRoute', 'xeditable', 'ui.codemirror', 'ui.bootstrap', 'orcaControllers'])
 
 orcaApp.config(['$routeProvider', function($routeProvider) {
   $routeProvider.
@@ -13,9 +13,6 @@ orcaApp.config(['$routeProvider', function($routeProvider) {
     when('/universe', {templateUrl: 'universe-list.html', controller: 'UniverseListCtrl'}).
     when('/universe-view/:univID', {templateUrl: 'universe-view.html', controller: 'UniverseViewCtrl'}).
     when('/universe-edit/:univID', {templateUrl: 'universe-edit.html', controller: 'UniverseEditCtrl'}).
-    
-    when('/report', {templateUrl: 'report.html', controller: 'ReportCtrl'}).
-
     otherwise({redirectTo: '/home'});
 }]);
 
@@ -27,28 +24,6 @@ orcaApp.run(['editableOptions', function(editableOptions) {
 }]);
 
 var orcaControllers = angular.module('orcaControllers', []);
-
-orcaServices = angular.module('orcaServices', ['ngResource'])
-
-orcaServices.factory('Ocean', function($resource){
-  return $resource('ocean/:oceanID.json', {}, {
-    query: {method:'GET', params:{oceanID:''}, isArray:false},
-  });
-});
-
-
-orcaServices.factory('Alpha', function($resource){
-  return $resource('alpha/:alphaID.json', {}, {
-    query: {method:'GET', params:{alphaID:''}, isArray:false},
-  });
-});
-
-orcaServices.factory('Universe', function($resource){
-  return $resource('universe/:universeID.json', {}, {
-    query: {method:'GET', params:{universeID:''}, isArray:false},
-  });
-});
-
 
 orcaControllers.controller('LoginCtrl', ['$scope', '$http', function ($scope, $http) {
   if (is_undefined(Madlee.user)) {
@@ -85,15 +60,6 @@ orcaControllers.filter('timeshift',function(){
     }
 });
 
-
-orcaControllers.filter('prettify', ['$sce', function($sce){
-    return function(text) {
-        var result = prettyPrintOne(text);
-        return  $sce.trustAsHtml(result)
-    }
-}])
-
-
 orcaControllers.controller('HomeCtrl', ['$scope', '$http', 
   function ($scope, $http) 
 {
@@ -102,3 +68,40 @@ orcaControllers.controller('HomeCtrl', ['$scope', '$http',
 
 
 }]);
+
+
+var load_filter = function(data) {
+  var filters = {text: 'Filters', icon: 'fa fa-filter', nodes: []}
+    var status = {text: 'Status', icon: "fa fa-bars", nodes: [
+        {
+          id: 'D',
+          text: "Developing",
+          icon: "fa fa-steam"
+        },
+        {
+          id: 'T',
+          text: "Testing",
+          icon: "fa fa-joomla"
+        },
+        {
+          id: 'P',
+          text: "Published",
+          icon: "fa fa-rocket"
+        },
+        {
+          id: 'X',
+          text: "Deprecated",
+          icon: "fa fa-recycle"
+        }
+      ]}
+    var users =  {text: "User", icon: "fa fa-users", nodes: []}
+
+    for (var i = 0; i < data.users.length; ++i) {
+      users.nodes.push({text: data.users[i].username, icon: "fa fa-user"})
+    }
+
+    filters.nodes.push(status)
+    filters.nodes.push(users)
+
+    jQuery('#div-filter').treeview({data: [filters], levels: 3});
+}

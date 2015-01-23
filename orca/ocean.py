@@ -145,6 +145,31 @@ INSERT INTO T_%(field)s
     (id, value) VALUES (?, ?);
 """.split(';')
 
+SQL_GET_VALUE_MINUTE = """SELECT stock, date, %(value_name)s 
+    FROM T_%(table_name)s
+        %(from_tables)s
+    %(where)s
+"""
+
+SQL_MIN_DATE_MINUTE = """SELECT date 
+    FROM %(table_name)s
+    WHERE id IN (
+        SELECT MIN(id) 
+        FROM %(table_name)s
+        %(where)s
+    )
+"""
+
+SQL_MAX_DATE_MINUTE = """SELECT date 
+    FROM %(table_name)s
+    WHERE id IN (
+        SELECT MAX(id) 
+        FROM %(table_name)s
+        %(where)s
+    )
+"""
+
+
 class OceanManager(object):
     def __init__(self):
         self.__pool = {}
@@ -655,6 +680,7 @@ class OceanKMinute(OceanSqlite3, MixinFromCSV):
     """Ocean with minute label"""
 
     COLUMN_NAMES = "price,open,close,high,low,vol,amount,cjbs,yclose,syl1,syl2,buy1,buy2,buy3,buy4,buy5,sale1,sale2,sale3,sale4,sale5,bc1,bc2,bc3,bc4,bc5,sc1,sc2,sc3,sc4,sc5,wb,lb,zmm,buy_vol,buy_amount,sale_vol,sale_amount,w_buy,w_sale".split(',')
+    SQL_GET_VALUE = SQL_GET_VALUE_MINUTE
 
     def __init__(self, name, filter):
         OceanSqlite3.__init__(self, name, OceanKMinute.COLUMN_NAMES)
@@ -718,7 +744,6 @@ class OceanKMinute(OceanSqlite3, MixinFromCSV):
             return None
 
     def stack(self, time, names, cursor=None, **kwargs):
-        # TODO: 
         try:
             names = names.split()
         except AttributeError:
@@ -728,8 +753,16 @@ class OceanKMinute(OceanSqlite3, MixinFromCSV):
             if name not in self.fields:
                 raise KeyError('%s is not a field.', name)
 
+        value_names = ["T_%s.value as %s" % (i, i) for i in names]
+        from_tables = ["INNER JOIN T_%s ON T_%s.id=T_%s.id" % (i, self.name, i) for i in names]
+
+        kwargs['time'] = time
         where, params = _build_sql_where(**kwargs)
-        sql = self.SQL_GET_VALUE % {'value_name': ','.join(names), 'table_name':self.__table, 'where': where}
+        
+        sql = self.SQL_GET_VALUE % {'table_name':self.name,
+            'value_name': ','.join(value_names), 
+            'from_tables': '\n'.join(from_tables),
+            'where': where}
         logger.debug('Start load SQL Data %s', sql)
         t1 = Timer()
         result = read_sql(sql, self.conn, params=params)
@@ -741,13 +774,19 @@ class OceanKMinute(OceanSqlite3, MixinFromCSV):
         """return a value frame between [day1, day2). 
             name: The column name of the value"""
 
-        stacks = self.stack(name, cursor, **kwargs)
+        stacks = self.stack(time, name, cursor, **kwargs)
         logger.debug('Start Pivot stacks')
         t1 = Timer()
         result = stacks.pivot('date', 'stock', name)
         result.columns = numpy.char.mod('%06d', result.columns)
         logger.debug('Finished pivoting in %s', t1)
         return result
+
+    def min_date(self, cursor=None, **kwargs):
+        return self._count_by_sql(SQL_MIN_DATE_MINUTE, cursor, **kwargs)
+
+    def max_date(self, cursor=None, **kwargs):
+        return self._count_by_sql(SQL_MIN_DATE_MINUTE, cursor, **kwargs)
 
 is_stock = lambda token: token[:4] in {'SH60', 'SZ30', 'SZ00'}
 is_index = lambda token: not is_stock(token)

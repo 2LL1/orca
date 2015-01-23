@@ -1,72 +1,29 @@
-orcaControllers.controller('UniverseListCtrl', ['$scope', 'Universe', function ($scope, Universe) {
-    Madlee.login_first()
-    Madlee.active_navbar_tab('universe')
-    
-    var filters = [{text: 'Filters', icon: 'fa fa-filter',
-    nodes: [
-    {
-      text: "Status",
-      icon: "fa fa-bars",
-      nodes: [
-        {
-          text: "Ready",
-          icon: "fa fa-star"
-        },
-        {
-          text: "Preparing",
-          icon: "fa fa-spin fa-spinner"
-        },
-        {
-          text: "Closed",
-          icon: "fa fa fa-graduation-cap"
-        },
-        {
-          text: "Cancelled",
-          icon: "fa fa-undo"
-        }
-      ]
-    },
-    {
-      text: "User",
-      icon: "fa fa-users",
-      nodes: [
-        {
-          text: "madlee",
-          icon: "fa fa-user"
-        }
-      ]
-    },
-    {
-      text: "Created on", 
-      icon: "fa fa-calendar",
-      nodes: [
-        {
-          text: "Year",
-          icon: "fa fa-calendar",
-          nodes: [
-            {
-              text: "2014",
-              icon: "fa fa-calendar"
-            },
-            {
-              text: "2015",
-              icon: "fa fa-calendar"
-            }
-          ]
-        }
-      ]
-    }
-  ]}]
-
+orcaControllers.controller('UniverseListCtrl', ['$scope', '$http', function ($scope, $http) {
+  Madlee.login_first()
+  Madlee.active_navbar_tab('universe')
   
-  jQuery('#div-filter').treeview({data: filters, levels: 3});
+  Madlee.login_first()
+  Madlee.active_navbar_tab('universe')
+    
+  $scope.page_size=50
+  $scope.records = {count: 0}
+  $scope.current = 1
 
-  $scope.data = Universe.query()
+  $scope.load_page = function() {
+    $http.get('universe.json').success(function(data){
+      $scope.records = data
+    })
+  }
+  
+  $http.get('universe/filter').success(function(data){
+    load_filter(data)
+  })
+  $scope.load_page();
 
 }]);
 
-orcaControllers.controller('UniverseDetailCtrl', ['$scope', '$routeParams', 'Universe', 
-  function ($scope, $routeParams, Universe) {
+orcaControllers.controller('UniverseDetailCtrl', ['$scope', '$routeParams', '$http', 
+  function ($scope, $routeParams, $http) {
     Madlee.login_first()
     Madlee.active_navbar_tab('universe')
 
