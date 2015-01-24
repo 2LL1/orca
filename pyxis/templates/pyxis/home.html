@@ -1,0 +1,33 @@
+<div class="row" id="main-body">
+  <div class="col-md-12">
+    <div class="btn-group" role="group" aria-label="...">
+
+      <div class="btn-group" ng-repeat="host in accounts.results" role="group">
+        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+          {[{host.name}]}
+          <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" role="menu">
+          <li ng-repeat="cmd in host.commands">
+            <a ng-click="start_jobs(cmd.id);">{[{cmd.name}]}</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <button type="button" class="btn btn-primary btn-lg pull-right" ng-click="load_page()">
+      <i class="fa fa-refresh"></i> Refresh
+    </button>    
+  </div>
+  <div class="col-md-12">
+    <table class="table">
+      <caption><h3>Job monitor</h3></caption>
+      <thead><tr><th>Host</th><th>Command</th><th>Author</th><th>Start at</th><th>Finished at</th><th>Status</th><th>&nbsp;</th></tr></thead>
+      <tbody>
+      </tbody>
+    </table>
+
+    <pagination boundary-links="true" total-items="records.count" ng-model="current" items-per-page="page_size" previous-text="&lsaquo;" next-text="&rsaquo;" first-text="&laquo;" last-text="&raquo;" ng-change="load_page()">
+    </pagination>
+  </div>
+</div>
+

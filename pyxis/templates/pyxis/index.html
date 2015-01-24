@@ -4,9 +4,9 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="ORCA">
+    <meta name="description" content="PYXIS">
     <meta name="author" content="madlee">
-    <link rel="icon" href="{% static "orca/img/favicon.ico" %}" type="image/vnd.microsoft.icon">
+    <link rel="icon" href="{% static "pyxis/img/favicon.ico" %}" type="image/vnd.microsoft.icon">
 
     <title>Pyxis</title>
 
@@ -18,19 +18,20 @@
     <link href="{% static "codemirror/lib/codemirror.css" %}" rel="stylesheet">
   </head>
 
-  <body ng-app="orcaApp">
+  <body ng-app="pyxisApp">
 
     <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
       <div class="container-fluid">
         <div class="navbar-header">
           <a class="navbar-brand" href="#">
-            <img alt="Abbvie" src="{% static "orca/img/orca.jpg" %}" width="24" height="24" class="img-circle"> Pyxis
+            <img alt="Abbvie" src="{% static "pyxis/img/pyxis.png" %}" width="24" height="24" class="img-circle"> Pyxis
           </a>
         </div>
 
         <div class="collapse navbar-collapse staff-only">
           <ul class="nav navbar-nav">
             <li class="ctrl-home"><a href="#">Home</a></li>
+            <li class="ctrl-admin"><a href="/admin">Admin</a></li>
           </ul>
           <ul class="nav navbar-nav pull-right">
             <li>
@@ -102,7 +103,11 @@
     <script src="{% static "angular/angular.js" %}"></script>
     <script src="{% static "angular/angular-route.js" %}"></script>
     <script src="{% static "angular/angular-resource.js" %}"></script>
+    <script src="{% static "angular/angular-resource.js" %}"></script>
+
+    <script src="{% static "ui-bootstrap-tpls-0.11.2.min.js" %}"></script>    
     
     <script src="{% static "madlee/js/madlee.1.js" %}"></script>
+    <script src="{% static "pyxis/js/pyxis.js" %}"></script>
   </body>
 </html>
