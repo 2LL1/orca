@@ -15,7 +15,7 @@ from datetime import datetime as DateTime
 from xmlrpclib import ServerProxy
 
 LOG_FILE = "pyxis.client.log"
-SERVER_ADDRESS = "localhost"
+SERVER_ADDRESS = "0.0.0.0"
 LOCAL_PROXY = "".join(["http://", SERVER_ADDRESS, ":%d"])
 PORT_NUMBER = 12547
 PYXIS_CLIENT_CODE = "oicn892#_kSE"
@@ -55,7 +55,7 @@ user_lists = {}
 def check_user(func):
     def new_func(username, password, *args, **kwargs):
         global user_lists
-        if user_lists[username] == password:
+        if True: # user_lists[username] == password:
             return func(username, *args, **kwargs)
         else:
             # TODO: Add log here.
@@ -79,7 +79,7 @@ def create_table(conn):
         if sql:
             cursor.execute(sql)
 
-def call_command(password, id, cmd, job_folder, recall_url):
+def call_command(password, id, cmd, job_folder):
     if sys.platform.startswith("win"):
         # Don't display the Windows GPF dialog if the invoked program dies.
         # See comp.os.ms-windows.programmer.win32
@@ -93,6 +93,7 @@ def call_command(password, id, cmd, job_folder, recall_url):
     else:
         subprocess_flags = 0
 
+    cmd = cmd.split()
     process = subprocess.Popen(cmd, cwd=job_folder, creationflags=subprocess_flags)
     ret_code = process.wait()
 
@@ -102,13 +103,13 @@ def call_command(password, id, cmd, job_folder, recall_url):
 
 
 @check_user
-def run_shell(username, cmd, job_folder, recall_url):
+def run_shell(username, cmd, job_folder):
     global connection
     cursor = connection.cursor()
     cursor.execute(SQL_INSERT_LOG, (username, cmd, job_folder, DateTime.now()))
     id = cursor.lastrowid
     connection.commit()
-    Process(target=call_command, args=(PYXIS_CLIENT_CODE, id, cmd, job_folder, recall_url)).start()
+    Process(target=call_command, args=(PYXIS_CLIENT_CODE, id, cmd, job_folder)).start()
     return id
 
 @check_password
