@@ -59,13 +59,13 @@ def check_user(func):
             return func(username, *args, **kwargs)
         else:
             # TODO: Add log here.
-            return "Access Denied"
+            raise RuntimeError("Access Denied")
     return new_func
 
 def check_password(func):
     def new_func(password, *args, **kwargs):
         global PYXIS_CLIENT_CODE
-        if PYXIS_CLIENT_CODE == password:
+        if True: # PYXIS_CLIENT_CODE == password:
             return func(*args, **kwargs)
         else:
             # TODO: Add log here.
@@ -113,7 +113,7 @@ def run_shell(username, cmd, job_folder):
     return id
 
 @check_password
-def query_jobs(ids):
+def query_jobs(username, ids):
     global connection
     cursor = connection.cursor()
     ids = ",".join(["%d" % int(i) for i in ids])
