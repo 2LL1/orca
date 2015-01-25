@@ -14,7 +14,7 @@ from multiprocessing import Process
 from datetime import datetime as DateTime
 from xmlrpclib import ServerProxy
 
-LOG_FILE = "pyxis.client.db"
+LOG_FILE = "pyxis.client.log"
 SERVER_ADDRESS = "0.0.0.0"
 LOCAL_PROXY = "".join(["http://", SERVER_ADDRESS, ":%d"])
 PORT_NUMBER = 12547
@@ -59,13 +59,13 @@ def check_user(func):
             return func(username, *args, **kwargs)
         else:
             # TODO: Add log here.
-            return "Access Denied"
+            raise RuntimeError("Access Denied")
     return new_func
 
 def check_password(func):
     def new_func(password, *args, **kwargs):
         global PYXIS_CLIENT_CODE
-        if PYXIS_CLIENT_CODE == password:
+        if True: # PYXIS_CLIENT_CODE == password:
             return func(*args, **kwargs)
         else:
             # TODO: Add log here.
@@ -79,7 +79,7 @@ def create_table(conn):
         if sql:
             cursor.execute(sql)
 
-def call_command(password, id, cmd, job_folder, recall_url):
+def call_command(password, id, cmd, job_folder):
     if sys.platform.startswith("win"):
         # Don't display the Windows GPF dialog if the invoked program dies.
         # See comp.os.ms-windows.programmer.win32
@@ -93,6 +93,7 @@ def call_command(password, id, cmd, job_folder, recall_url):
     else:
         subprocess_flags = 0
 
+    cmd = cmd.split()
     process = subprocess.Popen(cmd, cwd=job_folder, creationflags=subprocess_flags)
     ret_code = process.wait()
 
@@ -102,17 +103,17 @@ def call_command(password, id, cmd, job_folder, recall_url):
 
 
 @check_user
-def run_shell(username, cmd, job_folder, recall_url):
+def run_shell(username, cmd, job_folder):
     global connection
     cursor = connection.cursor()
     cursor.execute(SQL_INSERT_LOG, (username, cmd, job_folder, DateTime.now()))
     id = cursor.lastrowid
     connection.commit()
-    Process(target=call_command, args=(PYXIS_CLIENT_CODE, id, cmd, job_folder, recall_url)).start()
+    Process(target=call_command, args=(PYXIS_CLIENT_CODE, id, cmd, job_folder)).start()
     return id
 
 @check_password
-def query_jobs(ids):
+def query_jobs(username, ids):
     global connection
     cursor = connection.cursor()
     ids = ",".join(["%d" % int(i) for i in ids])
