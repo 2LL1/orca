@@ -8,6 +8,8 @@ from django.db import models, connection
 from django.contrib.auth.models import User
 from django.utils.encoding import python_2_unicode_compatible
 
+from xmlrpclib import ServerProxy
+
 @python_2_unicode_compatible
 class Account(models.Model):
     name = models.CharField(max_length=200)
@@ -33,12 +35,14 @@ class JobLog(models.Model):
     command = models.ForeignKey(Command)
     author = models.ForeignKey(User)
 
+    client_id = models.IntegerField()
+
     timestamp0 = models.DateTimeField(auto_now_add=True)
     timestamp1 = models.DateTimeField(auto_now=True)
-    timestampZ = models.DateTimeField()
+    timestampZ = models.DateTimeField(null=True, default=None)
 
     return_code = models.IntegerField(null=True, default=None)
 
     def __str__(self):
-        return self.name
+        return str(self.author)
 

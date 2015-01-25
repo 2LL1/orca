@@ -8,10 +8,11 @@ from pyxis.models import Account, Command
 
 
 class AccountAdmin(admin.ModelAdmin):
-    pass
+    list_display = ('name', 'url', 'password')
 admin.site.register(Account, AccountAdmin)
 
 class CommandAdmin(admin.ModelAdmin):
-    pass
+    list_display = ('account', 'name', 'command', 'work_folder')
+    list_display_links = ('name',)
 admin.site.register(Command, CommandAdmin)
 

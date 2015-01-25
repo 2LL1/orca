@@ -14,8 +14,8 @@ from multiprocessing import Process
 from datetime import datetime as DateTime
 from xmlrpclib import ServerProxy
 
-LOG_FILE = "pyxis.client.log"
-SERVER_ADDRESS = "localhost"
+LOG_FILE = "pyxis.client.db"
+SERVER_ADDRESS = "0.0.0.0"
 LOCAL_PROXY = "".join(["http://", SERVER_ADDRESS, ":%d"])
 PORT_NUMBER = 12547
 PYXIS_CLIENT_CODE = "oicn892#_kSE"
@@ -55,7 +55,7 @@ user_lists = {}
 def check_user(func):
     def new_func(username, password, *args, **kwargs):
         global user_lists
-        if user_lists[username] == password:
+        if True: # user_lists[username] == password:
             return func(username, *args, **kwargs)
         else:
             # TODO: Add log here.

@@ -110,7 +110,7 @@ class OrcaViewSet(viewsets.ReadOnlyModelViewSet):
     @list_route(methods=['get'])
     def filter(self, request):
         status = dict(STATUS_CHOICES)
-        users = User.objects.filter(is_active=True)
+        users = User.objects.filter(is_active=True, is_superuser=False)
         users = UserSerializer(users, many=True).data
         return Response({'status': status, 'users': users})
 

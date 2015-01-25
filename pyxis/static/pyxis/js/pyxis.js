@@ -3,6 +3,7 @@ var pyxisApp = angular.module('pyxisApp', ['ngRoute', 'ui.bootstrap', 'pyxisCont
 pyxisApp.config(['$routeProvider', function($routeProvider) {
   $routeProvider.
     when('/home', {templateUrl: 'home.html',   controller: 'HomeCtrl'}).
+    when('/login', {templateUrl: 'login.html',   controller: 'LoginCtrl'}).
     otherwise({redirectTo: '/home'});
 }]);
 
@@ -37,7 +38,7 @@ pyxisControllers.controller('LoginCtrl', ['$scope', '$http', function ($scope, $
 
 pyxisControllers.filter('timeshift',function(){
     return function(v) {
-      if (is_undefined(v)) {
+      if (is_undefined(v) || v === null) {
         return ''
       }
       else {
@@ -47,8 +48,8 @@ pyxisControllers.filter('timeshift',function(){
 });
 
 
-pyxisControllers.controller('HomeCtrl', ['$scope', '$http', 
-  function ($scope, $http) 
+pyxisControllers.controller('HomeCtrl', ['$scope', '$http', '$interval',
+  function ($scope, $http, $interval) 
 {
   Madlee.login_first()
   Madlee.active_navbar_tab('home')
@@ -70,8 +71,51 @@ pyxisControllers.controller('HomeCtrl', ['$scope', '$http',
   }
 
   $scope.start_jobs = function(id) {
-    alert(id);
+    $scope.current_cmd_id = id
+    $scope.user_password = ''
+    jQuery('#dlg-start-job').modal('show')
   }
+
+  $scope.submit_job = function() {
+    $scope.error_message = undefined
+    $http.post('command/' + $scope.current_cmd_id + '/new_job', {password:$scope.user_password}).success(function(data) {
+      if (data.status === 'success') {
+        $scope.records.results.push(data)
+        jQuery('#dlg-start-job').modal('hide')
+      }
+      else if (is_undefined(data.detail)) {
+        $scope.error_message = "UNKNOW ERROR HAPPEND";
+      }
+      else {
+        $scope.error_message = data.detail
+      }
+    })
+  }
+
+  $scope.refresh = function() {
+    jQuery('.fa-refresh').addClass('fa-spin')
+    $http.post('refresh').success(function(data) {
+      jQuery('.fa-refresh').removeClass('fa-spin')
+      if (data.status === 'success') {
+        for (var i = 0; i < data.results.length; ++i) {
+          for (var j = 0; j < $scope.records.results.length; ++j) {
+            if (data.results[i].id === $scope.records.results[j].id) {
+              $scope.records.results[j] = data.results[i]
+            }
+          }
+        }
+      }
+      else if (is_undefined(data.detail)) {
+        $scope.error_message = "UNKNOW ERROR HAPPEND";
+      }
+      else {
+        $scope.error_message = data.detail
+      }
+    })
+
+  }
+
+  $interval($scope.refresh, 30000);
 
   $scope.load_page();
 

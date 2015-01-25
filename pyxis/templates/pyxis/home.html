@@ -14,7 +14,7 @@
         </ul>
       </div>
     </div>
-    <button type="button" class="btn btn-primary btn-lg pull-right" ng-click="load_page()">
+    <button type="button" class="btn btn-primary btn-lg pull-right" ng-click="refresh()">
       <i class="fa fa-refresh"></i> Refresh
     </button>    
   </div>
@@ -23,11 +23,49 @@
       <caption><h3>Job monitor</h3></caption>
       <thead><tr><th>Host</th><th>Command</th><th>Author</th><th>Start at</th><th>Finished at</th><th>Status</th><th>&nbsp;</th></tr></thead>
       <tbody>
+        <tr ng-repeat="row in records.results" ng-class="{'bg-success': row.return_code===0, 'bg-danger': row.return_code<0, 'bg-danger': row.return_code>0}">
+          <td>{[{row.command.account}]}</td>
+          <td>{[{row.command.name}]}</td>
+          <td>{[{row.author.username}]}</td>
+          <td>{[{row.timestamp0|timeshift}]}</td>
+          <td>{[{row.timestampZ|timeshift}]}</td>
+          <td>{[{row.return_code}]}</td>
+          <td><span ng-if="row.return_code !== null">{[{row.return_code}]}</span></td>
+        </tr>
       </tbody>
+
     </table>
 
     <pagination boundary-links="true" total-items="records.count" ng-model="current" items-per-page="page_size" previous-text="&lsaquo;" next-text="&rsaquo;" first-text="&laquo;" last-text="&raquo;" ng-change="load_page()">
     </pagination>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="dlg-start-job" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel"><i class="fa fa-rocket"></i> Enter your password to start Job</h4>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-danger" role="alert" ng-if="error_message">{[{error_message}]}</div>
+        <form class="form-horizontal">
+          <div class="form-group">
+            <label for="txt-current-password" class="col-sm-2 control-label">Password</label>
+            <div class="col-sm-10">
+              <input type="password" class="form-control" placeholder="Password" ng-model="user_password">
+            </div>
+          </div>
+        </form>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" ng-click="submit_job()">Submit</button>
+      </div>
+    </div>
   </div>
 </div>
 

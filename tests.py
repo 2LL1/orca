@@ -1,6 +1,6 @@
 from xmlrpclib import ServerProxy
 
-client = ServerProxy("http://tinymol.com:12547", allow_none=True)
+client = ServerProxy("http://localhost:12547", allow_none=True)
 
 users = [['madlee', 'dhl419'], ['dhl419', '1234567']]
 id = client.update_users("oicn892#_kSE", users)
