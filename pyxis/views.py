@@ -38,7 +38,7 @@ class CommandViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = CommandSerializer
     queryset = Command.objects.all()
 
-    @detail_route(methods=['post'])
+    @detail_route(methods=['GET'])
     @rest_view
     def new_job(self, request, pk=None):
         password = request.POST['password']
