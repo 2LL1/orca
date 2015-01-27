@@ -30,7 +30,7 @@
           <td>{[{row.timestamp0|timeshift}]}</td>
           <td>{[{row.timestampZ|timeshift}]}</td>
           <td>{[{row.return_code}]}</td>
-          <td><span ng-if="row.return_code !== null">{[{row.return_code}]}</span></td>
+          <td><a ng-if="row.return_code !== null" class="btn btn-danger"><i class="fa fa-cross"></i> Remove</a></td>
         </tr>
       </tbody>
 
