@@ -7,7 +7,6 @@ from datetime import datetime as DateTime
 
 from django.shortcuts import render
 from django.db.models import Q
-from django.contrib.auth import authenticate
 from django.conf import settings
 from rest_framework import viewsets, permissions
 from rest_framework import status
@@ -38,12 +37,11 @@ class CommandViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = CommandSerializer
     queryset = Command.objects.all()
 
-    @detail_route(methods=['GET'])
+    @detail_route(methods=['POST'])
     @rest_view
     def new_job(self, request, pk=None):
         password = request.POST['password']
-        user = authenticate(username=request.user.username, password=password)
-        if user:
+        if user.check_password(password):
             if user.is_active:
                 obj = self.get_object()
                 proxy = ServerProxy(obj.account.url)

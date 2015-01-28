@@ -40,7 +40,7 @@ orcaControllers.controller('LoginCtrl', ['$scope', '$http', function ($scope, $h
 
     data = {username: username, password: password, keep_login: remember}
 
-    $http.post('/madlee/login.json', data).success(function(data) {
+    $http.post('/madlee/user/login', data).success(function(data) {
       window.location = '#/home'
     }).error(function() {
 
